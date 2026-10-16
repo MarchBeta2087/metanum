@@ -448,10 +448,32 @@ MetaNum.hardy(100.5);   // H_{ω²}(10+0.5) ≈ 11085
 MetaNum.hardy(1234);  // H_{ω³+ω²·2+ω·3+4}(10), exact for small levels and engine-collapsed (F_j = H^{ω^j}) for deep segments
 ```
 
-Recursion rules: 
+Recursion rules:
 -`H_0(n) = n`, `H_{α+1}(n) = H_α(n+1)` (only +1, never iterated),
 -For fractional 0<f<1 we have `H_{α+f}(n) = H_α(n+f)`,
 -`H_λ(n) = H_{λ[n]}(n)` with the CNF fundamental sequences.
+
+### hardy(x, base) and FGH(x, y)
+
+The second argument is the **base**: the ordinal is read off the digits of x in that base (default 10), and the hierarchy argument is the base itself. The base must be an integer in `[2, 1000]`.
+
+```javascript
+MetaNum.hardy(10, 8);  // "10" reads as "12" in base 8 → H_{ω+2}(8) = 20
+MetaNum.hardy(10, 4);  // "10" reads as "22" in base 4 → H_{ω*2+2}(4) = 24
+MetaNum.hardy(5, 8);   // H_5(8) = 13
+MetaNum.hardy(64, 8);  // "100" base 8 → H_{ω²}(8) = 2048
+```
+
+`MetaNum.fgh(x, y)` is the fast-growing hierarchy entry, defined through hardy: `FGH(x, y) = H_{y^x}(y) = hardy(y^x, y)` (same base validation).
+
+```javascript
+MetaNum.fgh(3, 10);    // = hardy(1000, 10) = H_{ω³}(10)
+MetaNum.fgh(2, 8);     // = hardy(64, 8) = 2048
+```
+
+For `base ≠ 10` the plain finite inputs take the base-`base` digit path; structured / power-tower inputs keep the decimal-specific shadowing and are rejected there.
+
+
 
 ### Hardy beyond ω^ω
 
@@ -841,11 +863,13 @@ Rule (v) is an interesting one, though. It basically tells us that if we have an
 
 Now, all that is left to do is to define !Aa, which has ω^ω level.
 
-- !Aaα = 10{ω^int(α)\*frac(α)}10
+- !Aaα ≡ A(a×⌊α⌋)(α) — the letter token carrying ⌊α⌋ lowercase a's applied at argument α (notation-semantics decision 1B). For a non-integer α this is the continuous extension inside each unit interval (e.g. !Aa1.5 = Aa1.5, !Aa2.5 = Aaa2.5).
+- For an INTEGER α = n the "!" adds one ω^ to the level, so !Aan = 10{ω^n}10 evaluated as the full rule-3 cascade: !Aa1 = 10{ω}10 = 10{10}10 = Aa10, !Aa2 = 10{ω^2}10, !Aa3 = 10{ω^3}10. (This is NOT the token application A(a×n)(n) — Aaaa3 ≠ !Aa3.) The stored form is the base [10] plus the cascade's ordinal rows; the higher symbols keep the very same array one layer up: @Aa3 (layer 1) = 10{ω^(ω^3)}10, #Aa3 (layer 2) = 10{ω^(ω^(ω^3))}10.
+- The formula !Aaα = 10{ω^int(α)\*frac(α)}10 is only the rule-(v) digit-distribution shorthand: read literally it degenerates at integers (int(1)·frac(1) = 0 gives 10{0}10 = 100), so it must not be used as an executable definition.
 
-Then we have !Aa1 = Aa10, !Aa2 = Aaa10, !Aa3 = Aaaa10,... Just like the previous letters, any number can be written as !Aaα. Here, it is actually the binary form of !αAaβ = !Aa(β+logα) which has the most intuitive meaning:
+Then we have !Aa1 = Aa10 (the diagonal reading above); the earlier claim "!Aa2 = Aaa10" does not hold — !Aa2 = 10{ω^2}10 while Aaa10 is the compact ω²-marker. Just like the previous letters, any number can be written as !Aaα. Here, it is actually the binary form of !αAaβ = !Aa(β+log₅(α/2)) which has the most intuitive meaning:
 
-In terms of the extended arrow operation, β tells us ω^β is in the ordinal and the digits of α tell us its coefficient and what residue ordinals are. Actually, !αAaβ has a more ω^ layer compare to αAaβ in ordinal level. For example, !2.0000Aa4 = 10{ω^4}10 and 2.0000Aa4 = 10{4}10
+In terms of the extended arrow operation, β tells us ω^β is in the ordinal and the digits of α tell us its coefficient and what residue ordinals are. Actually, !αAaβ has a more ω^ layer compare to αAaβ in ordinal level. For example, !2.0000Aa4 = !Aa4 = 10{ω^4}10 and 2.0000Aa4 = 10{4}10 (α = 2 contributes log₅(2/2) = 0, so the two spellings coincide)
 
 And in terms of ordinals, β gives us the maximum power of ω and the digits of α give us the coefficents of the various powers of ω, these neat relations are also true for β=1 and α≥2.
 
@@ -998,6 +1022,7 @@ Every hyperoperation is stored EXACTLY while it fits the array budget and approx
 # Changelog
 
 
+- 2026-10-16 v2.1.0: hardy(x, base) — the second argument is the base (default 10, integer in [2,1000]); the ordinal is read off the digits of x in that base, so hardy(10,8) = H_{ω+2}(8) = 20 and hardy(10,4) = H_{ω·2+2}(4) = 24. New FGH(x, y) = hardy(y^x, y). The base-10 path is unchanged; for other bases the plain finite inputs take the base digit path (structured / power-tower inputs are rejected). test.js merged into test_mixed.js (1143 vectors), and the comments in metanum.js / format-metanum.js were tightened. Fix issue #15 (hardy ordinal rows carried a negative coefficient from the decimal point of non-integer exponents and ran one column per character — hardy("ee9.05") now reads the integer digits only, flows the fraction into the from-below base, and is monotone again); issue #17 (hardy with a non-integer mantissa at or beyond Number.MAX_VALUE collapsed to Infinity — the rest now recurses on the exact digit string, hardy("1.5e309") is finite); issue #19 (Aa3 = 2Aa3 = 10{3}10 → [[10^10,8,8]]; an integer !Aa<n> is the full 10{ω^n}10 cascade at layer 0 with @Aa<n>/#Aa<n> at layers 1/2 on the same array — past the row budget (n ≥ maxCols) the layer goes one up with the de-!-ed compact [[n],[1,0,1]] so nothing truncates; format emits exactly ONE symbol per value and the displays round-trip; toString splits "^count" tokens so multi-row cascades parse back; the "EEαEβ" display with a beyond-double exponent no longer loses its letter chain on parse, and comma-grouped displays parse back); issue #20 (the diagonal letters follow the README — Aaα = 10{α}10, so Aa1.5 = [[924.19,3]] between Aa1 and Aa2, and format is the approximate α'Aaβ' form carried to its single-letter display "EE1.537E924"/"FFFE1.745E9", round-tripped with tolerance); issue #21 (toBeaf keeps negatives as "-{5}" and sub-units as "{10,320}⁻¹", both parsed back by fromBeaf); README errata for the four !Aa/!αAaβ formulas (notation-semantics §6); issue #22 re-evaluated and left as the marker approximation — the layer-1 row format cannot express the finite-part variation of a rule-2 chain (see docs/d07-engine-design.md §7).
 - 2026-9-30 v2.0.2: Fix a lot of bugs e.g. hardy(non integer > 1000) throwing, hardy beyond the 1.8e308 range fails, format of "ω^n\*large numbers" fails, some FORMAT_OPTIONS not take effect. 
 - 2026-9-25 v2.0.1: Fix arrow(x,y,y) not being monotone in y and array except array[0][0] may be non-integer
 - 2026-9-15 v2.0: Add hyper-root & hyper-log, hardy function, fractional hyperoperation inputs, fix BEAF operation level and format
