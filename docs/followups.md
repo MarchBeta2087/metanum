@@ -7,6 +7,29 @@
 | 关联 | [`issue-17-defects.md`](issue-17-defects.md)、[`notation-semantics.md`](notation-semantics.md)、[`d07-engine-design.md`](d07-engine-design.md) |
 | 状态 | 待排期（上游 issue #19–#24） |
 
+## 关闭判定（v2.1.0，2026-10-18）
+
+| Issue | 验收结果（实测） | 结论 |
+|---|---|---|
+| #19 | 部分满足：`@Aa2..@Aa10` / `#Aa2..#Aa10` 往返 `true`；`@Aa1` / `#Aa1` 输出 `!1.000N10` / `@1.000N10`，parser 解析为 `0`；`@Aa1.5` / `#Aa2.5` 亦不往返 | **保持 open** |
+| #20 | 部分满足：`Aa1.5`、`!Aa2.5` 等仅近似往返；`Aa1.9` 输出 `3.261F8`，parser 解析为 `0`；未达到 `eq` 精度 | **保持 open** |
+| #21 | 代码与回归已满足（`test_mixed.js` D02 段）；§4 表格已补次单位/负值行 | **可关闭** |
+| #22 | 按设计不实现，`d07-engine-design.md` §7 已记录复评与撤回理由 | **可关闭（not planned）** |
+| #23 | README 四处矛盾已改，并已链接 `docs/notation-semantics.md` | **可关闭** |
+| #24 | 特性未实现，形式语义未并入规范；#17 已明确“很可能永不实现” | **可关闭（not planned）** |
+
+复现（v2.1.0）：`node test_mixed.js` 1143/0；
+`node docs/repro/issue-17.js` 中 D01–D04/D07 全部通过。
+#19/#20 的残余可用下列片段复核：
+
+```js
+const M = require("./metanum.js"); global.MetaNum = M;
+const { format } = require("./format-metanum.js");
+for (const s of ["@Aa1", "#Aa1", "@Aa1.5", "Aa1.9", "!Aa2.5"])
+  console.log(s, "->", format(M(s)), "parse:", M(format(M(s))).toString());
+// @Aa1 -> !1.000N10 parse: 0 ; Aa1.9 -> 3.261F8 parse: 0
+```
+
 > 每一项给出：现象 / 位置 / 影响 / 验收 / 依赖 / 优先级。
 > 优先级：**P1** 阻断（无）、**P2** 正确性、**P3** 显示一致性、**P4** 文档/特性。
 
@@ -53,7 +76,7 @@ parser 反推 `x = β + log₅(α/2)` 有浮点误差；或形状未被 `formatB
 **验收**
 - [ ] 为 `x ∈ [1,2)` 增加规范形（与 `Aa x` 一致）并往返；
 - [ ] 提高 mantissa 有效位（至少覆盖到 `eq` 精度）或引入带容差的 `formatRoundTrip` 断言；
-- [ ] `test.js` 增加往返/容差向量。
+- [ ] `test_mixed.js` 增加往返/容差向量。
 
 ---
 
@@ -73,7 +96,7 @@ MetaNum(-5).toBeaf()        === "{5}"     // 负号丢失
 **验收**
 - [ ] 次单位（`sign 2/-2`）与负值要么抛 `MetaNumUnrepresentableError`，要么给出明确降级并在
       `notation-semantics.md` §4 表格补一行；
-- [ ] `test.js` 覆盖。
+- [ ] `test_mixed.js` 覆盖。
 **备注**：BEAF 本不表示负数/分数，倾向统一抛错（与 D03 一致）。
 
 ---
@@ -117,4 +140,4 @@ MetaNum(-5).toBeaf()        === "{5}"     // 负号丢失
 ## 附：已完成（不再跟踪）
 
 - D01–D04（`cdf08fb`）、D05/D06/D07 主体（`5262803`/`029eac4`/`8643ee6`）、S01（`notation-semantics.md`）。
-- `package.json` 的 `test` 已指向 `test.js`，移除缺失的 `example`。
+- `package.json` 的 `test` 已指向 `test_mixed.js`；v2.1.0 起 `test.js` 已并入 `test_mixed.js`。

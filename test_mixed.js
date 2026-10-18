@@ -1967,7 +1967,7 @@ checkFormat("Abc100", "Abc100", "1.000Abc100");
 checkFormat("Defg200", "Defg200", "1.000Defg200");
 
 // Symbols and ε:
-checkFormat("!Aa300", "!Aa300", "!2.000Aa300");
+checkFormat("!Aa300 → !2.000Aa300 (over-budget: layer 1 + de-!-ed compact)", "!Aa300", "!2.000Aa300");
 checkFormat("@Bb400", "@Bb400", "@1.000Bb400");
 checkFormat("1ε500", "1ε500", "1.000000ε500"); // epsilonSignificantDigits = 6
 
@@ -2103,18 +2103,24 @@ MetaNum.maxCols = _savedCols; MetaNum.maxRows = _savedRows;
 // ─────────────────────────────────────
 console.log("\n=== symbol layer semantics ===");
 (function () {
-  var om5row = JSON.stringify([1, 0, 0, 0, 0, 0, 1]); // [1 | ω^5] marker row
+  // issue #19: an INTEGER !Aa<n> is the full rule-3 cascade of 10{ω^n}10
+  // ("!" adds one ω^ to the level) — base [10] + (maxRows−1) ordinal rows,
+  // top row [8, 9×n], layer 0.  @Aa<n> keeps the same array at layer 1 and
+  // #Aa<n> at layer 2 (one ω^ per symbol).
   var x = MetaNum("!Aa5");
-  checkBool("!Aa5 = 10{ω^5}5 marker row", JSON.stringify(x.array[1]) === om5row && x.array.length === 2, true);
-  checkBool("!Aa5 de-layers to Aaaaaa5", x.eq(MetaNum("Aaaaaa5")), true);
+  checkBool("!Aa5 = 10{ω^5}10 cascade (19 ordinal rows)",
+    x.array.length === MetaNum.maxRows && x.array[0].length === 1 && x.array[0][0] === 10 &&
+    JSON.stringify(x.array[x.array.length - 1]) === JSON.stringify([8, 9, 9, 9, 9, 9]) && x.layer === 0, true);
+  checkBool("!Aa5 === engine 10{ω^5}10",
+    x.eq(MetaNum._hyperopFromOrdinalRaw(MetaNum.TEN.clone(), MetaNum.TEN.clone(), [0, 0, 0, 0, 0, 1])), true);
   checkBool("!1.000Aa5 = !Aa5 (binary form α=1)", MetaNum("!1.000Aa5").eq(x), true);
   var y = MetaNum("@Aa5");
-  checkBool("@Aa5 = !Aaaaaa5 (two ω^ layers)", y.eq(MetaNum("!Aaaaaa5")), true);
-  checkBool("@Aa5 layer=1 with ω^5 row", y.layer === 1 && JSON.stringify(y.array[1]) === om5row, true);
+  checkBool("@Aa5 = !Aa5 array at layer 1 (two ω^ layers)",
+    JSON.stringify(y.array) === JSON.stringify(x.array) && y.layer === 1, true);
   checkBool("@1.000Aa5 = @Aa5", MetaNum("@1.000Aa5").eq(y), true);
   var z = MetaNum("#Aa5");
-  checkBool("#Aa5 = @Aaaaaa5 (three ω^ layers)", z.eq(MetaNum("@Aaaaaa5")), true);
-  checkBool("#Aa5 layer=2", z.layer === 2, true);
+  checkBool("#Aa5 = !Aa5 array at layer 2 (three ω^ layers)",
+    JSON.stringify(z.array) === JSON.stringify(x.array) && z.layer === 2, true);
   var ab = MetaNum("!Ab5");
   checkBool("!Ab5 = 10{ω^(ω+1)}5 (layer 1, row [1,1,1])",
     ab.layer === 1 && JSON.stringify(ab.array[1]) === JSON.stringify([1, 1, 1]), true);
@@ -2230,7 +2236,7 @@ checkFormat("Ab100 → 1.000Ab100", MetaNum("Ab100"), "1.000Ab100");
 // symbol de-layering (decision 1B: base is the argument, display is the
 // binary form !αAaβ; !Aa3 = Aaaa3 = 10{ω³}3)
 checkFormat("!Aa3 → !2.000Aa3", MetaNum("!Aa3"), "!2.000Aa3");
-checkFormat("@Aa3 → !2.000Aaaa10", MetaNum("@Aa3"), "!2.000Aaaa10");
+checkFormat("@Aa3 → @2.000Aa3 (one symbol per ω^ layer, isomorphic to !Aa3)", MetaNum("@Aa3"), "@2.000Aa3");
 // parser roundtrip of the new canonical forms
 checkBool("parse 2.000Aaaa10", MetaNum("2.000Aaaa10").format() === "2.000Aaaa10", true);
 checkBool("parse !2.000Aaaa10", MetaNum("!2.000Aaaa10").format() === "!2.000Aaaa10", true);
@@ -2391,7 +2397,7 @@ console.log("\n=== FORMAT_OPTIONS take effect ===");
     return a && b;
   });
   after("opt epsilonSignificantDigits: 6 → 1.000000ε12, 0 → 1ε12", function () {
-    var v = MetaNum("!!!!!!!!!!!!2.000Aa10");
+    var v = MetaNum("1ε12");
     set("epsilonSignificantDigits", 6); var a = format(v) === "1.000000ε12";
     set("epsilonSignificantDigits", 0); var b = format(v) === "1ε12";
     return a && b;
@@ -2401,3 +2407,300 @@ console.log("\n=== FORMAT_OPTIONS take effect ===");
 console.log("\n=== format tests Done ===");
 
 
+
+
+// ─────────────────────────────────────────────────────────────
+// issue-17 regression vectors (merged from test.js)
+// ─────────────────────────────────────────────────────────────
+function ok(name, cond, extra) { checkBool(name + (extra !== undefined ? "  => " + extra : ""), !!cond, true); }
+function eq(name, got, want) { checkBool(name, got === want, true); }
+
+// ─────────────────────────────────────────────────────────────
+// D01 · pow(10, α) must not flip sign below the double subnormal floor
+// ─────────────────────────────────────────────────────────────
+console.log("\n=== D01 pow(10, negative alpha) sign ===");
+[-320, -323, -324, -325, -350, -400].forEach(function (a) {
+  ok("pow(10," + a + ").lt(1)", MetaNum.pow(10, a).lt(1), MetaNum.pow(10, a).toString());
+});
+ok("pow(10,-324).mul(1e324).eq(1)",
+  MetaNum.pow(10, -324).mul(MetaNum.fromString("1e324")).eq(1),
+  MetaNum.pow(10, -324).mul(MetaNum.fromString("1e324")).toString());
+(function monotone() {
+  var prev = MetaNum.pow(10, -320), all = true;
+  for (var a = -321; a >= -400; a--) {
+    var v = MetaNum.pow(10, a);
+    if (!v.lt(prev)) { all = false; break; }
+    prev = v;
+  }
+  ok("pow(10,α) strictly decreasing over α ∈ [-320,-400]", all);
+})();
+eq("log10(10^-324) === -324", MetaNum.pow(10, -324).log10().toString(), "-324");
+ok("pow(10,-320) still < 1 (no regression)", MetaNum.pow(10, -320).lt(1));
+
+// ─────────────────────────────────────────────────────────────
+// D02 · toBeaf() must keep the base for 10^e (was "{16}")
+// ─────────────────────────────────────────────────────────────
+console.log("\n=== D02 toBeaf base preservation ===");
+(function () {
+  var v16 = MetaNum.BEAF(10, 16);
+  var s16 = v16.toBeaf();
+  ok("BEAF(10,16).toBeaf() !== '{16}'", s16 !== "{16}", s16);
+  eq("BEAF(10,16).toBeaf()", s16, "{10,16}");
+  ok("fromBeaf(BEAF(10,16).toBeaf()).eq(BEAF(10,16))", MetaNum.fromBeaf(s16).eq(v16), s16);
+  var s100 = MetaNum.BEAF(10, 100).toBeaf();
+  ok("BEAF(10,100) round-trip", MetaNum.fromBeaf(s100).eq(MetaNum.BEAF(10, 100)), s100);
+  eq("fromBeaf('{10,16}').toBeaf()", MetaNum.fromBeaf("{10,16}").toBeaf(), "{10,16}");
+  // documented (< MSI) behavior must not regress
+  eq("BEAF(10,15).toBeaf()", MetaNum.BEAF(10, 15).toBeaf(), "{1000000000000000}");
+  // README examples
+  eq("7625597484987.toBeaf()", new MetaNum(7625597484987).toBeaf(), "{7625597484987}");
+  eq("BEAF(3,3,3).toBeaf()", MetaNum.BEAF(3, 3, 3).toBeaf(), "{3638334640023.7783}");
+  // issue #21 (FU-03): negatives and sub-units keep their semantics
+  eq("(-5).toBeaf()", new MetaNum(-5).toBeaf(), "-{5}");
+  ok("fromBeaf('-{5}').eq(-5)", MetaNum.fromBeaf("-{5}").eq(new MetaNum(-5)));
+  eq("1e-320.toBeaf()", MetaNum("1e-320").toBeaf(), "{10,320}⁻¹");
+  ok("fromBeaf('{10,320}⁻¹').eq(1e-320)", MetaNum.fromBeaf("{10,320}⁻¹").eq(MetaNum("1e-320")));
+  eq("0.001.toBeaf()", MetaNum("0.001").toBeaf(), "{1000}⁻¹");
+  ok("fromBeaf('{1000}⁻¹').eq(0.001)", MetaNum.fromBeaf("{1000}⁻¹").eq(MetaNum("0.001")));
+  eq("(-1e-320).toBeaf()", MetaNum("-1e-320").toBeaf(), "-{10,320}⁻¹");
+  ok("fromBeaf('-{10,320}⁻¹').eq(-1e-320)", MetaNum.fromBeaf("-{10,320}⁻¹").eq(MetaNum("-1e-320")));
+})();
+
+// ─────────────────────────────────────────────────────────────
+// D03 · toBeaf() must never dump internal rows; it fails loudly instead
+// ─────────────────────────────────────────────────────────────
+console.log("\n=== D03 toBeaf unrepresentable behavior ===");
+[["BEAF(10,2,1,1,2)", MetaNum.BEAF(10, 2, 1, 1, 2)],
+ ["BEAF(4,5,6,7,8,9)", MetaNum.BEAF(4, 5, 6, 7, 8, 9)],
+ ["fromArray([[10],[1,2,1]])", MetaNum.fromArray([[10], [1, 2, 1]])]
+].forEach(function (p) {
+  var name = p[0], m = p[1], threw = null, out = null;
+  try { out = m.toBeaf(); } catch (e) { threw = e; }
+  ok(name + ".toBeaf() throws a typed error", threw && threw.name === "MetaNumUnrepresentableError" &&
+    threw.code === "METANUM_UNREPRESENTABLE", threw ? threw.name : out);
+  if (out !== null) ok(name + ".toBeaf() has no internal '[' literals", out.indexOf("[") === -1, out);
+});
+
+// ─────────────────────────────────────────────────────────────
+// D04 · format() repeated single-letter chains must not fold to a tiny count
+// ─────────────────────────────────────────────────────────────
+console.log("\n=== D04 format repeated-letter chains ===");
+(function () {
+  eq("format(Z152416) unchanged", format(MetaNum("Z152416")), "1.000Z152,416");
+  var z = format(MetaNum("ZZ152416"));
+  var zz = format(MetaNum("ZZZ152416"));
+  ok("format(ZZ152416) !== '1.000Z3'", z !== "1.000Z3", z);
+  eq("format(ZZ152416)", z, "Z1.000Z152,416");
+  eq("format(ZZZ152416)", zz, "ZZ1.000Z152,416");
+  ok("Z/ZZ/ZZZ values strictly increasing",
+    MetaNum("Z152416").lt(MetaNum("ZZ152416")) &&
+    MetaNum("ZZ152416").lt(MetaNum("ZZZ152416")));
+  // canonical same-letter law: AaAa300 → Aa1.000Aa300 (unchanged)
+  eq("format(AaAa300) law intact", format(MetaNum("AaAa300")), "Aa1.000Aa300");
+  // the buggy family (prefix top row over a dominant lower row)
+  eq("format(YY10)", format(MetaNum("YY10")), "Y1.000Y10");
+  eq("format(ZY10)", format(MetaNum("ZY10")), "Z1.000Y10");
+  eq("format(ZZ10)", format(MetaNum("ZZ10")), "Z1.000Z10");
+})();
+
+// ─────────────────────────────────────────────────────────────
+// D05 · !Aaα with real α (notation-semantics decision 1B)
+// ─────────────────────────────────────────────────────────────
+console.log("\n=== D05 !Aa(real alpha) ===");
+(function () {
+  ok("!Aa0.5 != 0", MetaNum("!Aa0.5").neq(0), MetaNum("!Aa0.5").toString());
+  ok("!Aa1.5 != 0", MetaNum("!Aa1.5").neq(0), MetaNum("!Aa1.5").toString());
+  ok("!Aa2.5 != 0", MetaNum("!Aa2.5").neq(0), MetaNum("!Aa2.5").toString());
+  ok("!Aa1.5 === Aa1.5", MetaNum("!Aa1.5").eq(MetaNum("Aa1.5")));
+  ok("!Aa2.5 === Aaa2.5", MetaNum("!Aa2.5").eq(MetaNum("Aaa2.5")));
+  // issue #19: an INTEGER !Aa<n> is the diagonal 10{ω^n}10 ("!" adds one ω^
+  // to the level), stored as the full rule-3 cascade — the README's original
+  // letter-law anchors (!Aa1 = Aa10, !Aa2 = Aaa10-equivalent engine value).
+  ok("!Aa1 < !Aa2 < !Aa3 < !Aa5 (integer diagonal anchors)",
+    MetaNum("!Aa1").lt(MetaNum("!Aa2")) && MetaNum("!Aa2").lt(MetaNum("!Aa3")) &&
+    MetaNum("!Aa3").lt(MetaNum("!Aa5")));
+  ok("!Aa1.5 < !Aa2.5 (smooth curve below the diagonal)",
+    MetaNum("!Aa1.5").lt(MetaNum("!Aa2.5")));
+  // past the row budget (n ≥ maxCols) the cascade would silently truncate
+  // ω^n down to ω^(maxCols−1): go ONE LAYER UP with the de-!-ed compact
+  // [[n],[1,0,1]] instead (the 300 stays in r0 and the display round-trips)
+  var ob = MetaNum("!Aa300");
+  ok("!Aa300 = [[300],[1,0,1]] at layer 1 (over-budget)",
+    ob.layer === 1 && ob.array.length === 2 &&
+    JSON.stringify(ob.array[0]) === "[300]" && JSON.stringify(ob.array[1]) === "[1,0,1]");
+  ok("!Aa300 > !Aa19 (no truncation to ω^19)",
+    ob.gt(MetaNum("!Aa19")));
+  ok("!Aa300 format/parse round-trip",
+    MetaNum.fromString(format(ob)).eq(ob) && format(ob) === "!2.000Aa300");
+  ok("!Aa20 is the first over-budget case (maxCols = 20)",
+    MetaNum("!Aa20").layer === 1 && MetaNum("!Aa19").layer === 0);
+  ok("@Aa300 / #Aa300 keep the compact one layer higher",
+    MetaNum("@Aa300").layer === 2 && MetaNum("#Aa300").layer === 3 &&
+    MetaNum("@Aa300").gt(MetaNum("!Aa300")) && MetaNum("#Aa300").gt(MetaNum("@Aa300")));
+  ok("!2Aa300 / !2.000Aa300 agree with !Aa300",
+    MetaNum("!2Aa300").eq(ob) && MetaNum("!2.000Aa300").eq(ob));
+  function omegaPow(n) {
+    var c = []; for (var i = 0; i < n; i++) c.push(0); c.push(1);
+    return MetaNum._hyperopFromOrdinalRaw(MetaNum.TEN.clone(), MetaNum.TEN.clone(), c);
+  }
+  ok("!Aa1 === Aa10 (10{ω}10 = 10{10}10)", MetaNum("!Aa1").eq(MetaNum("Aa10")));
+  ok("!Aa2 === 10{ω^2}10", MetaNum("!Aa2").eq(omegaPow(2)));
+  ok("!Aa5 === 10{ω^5}10", MetaNum("!Aa5").eq(omegaPow(5)));
+  ok("!Aa10 === 10{ω^10}10", MetaNum("!Aa10").eq(omegaPow(10)));
+  // array shape: [[10]] + (maxRows-1) ordinal rows, top row [8, 9×n], layer 0
+  var a3 = MetaNum("!Aa3");
+  ok("!Aa3 is the full 10{ω^3}10 cascade (19 ordinal rows)",
+    a3.array.length === MetaNum.maxRows && a3.array[0].length === 1 && a3.array[0][0] === 10 &&
+    JSON.stringify(a3.array[a3.array.length - 1]) === "[8,9,9,9]" && a3.layer === 0);
+  ok("@Aa3 = !Aa3 array at layer 1, #Aa3 at layer 2",
+    JSON.stringify(MetaNum("@Aa3").array) === JSON.stringify(a3.array) && MetaNum("@Aa3").layer === 1 &&
+    JSON.stringify(MetaNum("#Aa3").array) === JSON.stringify(a3.array) && MetaNum("#Aa3").layer === 2);
+  ok("Aa3 = 2Aa3 = 10{3}10 → [[10^10,8,8]]",
+    JSON.stringify(MetaNum("Aa3").array) === "[[10000000000,8,8]]" &&
+    JSON.stringify(MetaNum("2Aa3").array) === "[[10000000000,8,8]]");
+})();
+
+// ─────────────────────────────────────────────────────────────
+// D06 · !αAaβ = !Aa(β + log₅(α/2))  (notation-semantics §2, A1)
+// ─────────────────────────────────────────────────────────────
+console.log("\n=== D06 !alpha Aa beta ===");
+(function () {
+  function log5(x) { return Math.log(x) / Math.log(5); }
+  function buildAa(x) {
+    var k = Math.max(1, Math.floor(x));
+    var row = [1];
+    for (var i = 0; i < k; i++) row.push(0);
+    row.push(1);
+    return MetaNum.fromArray([[x], row]);
+  }
+  ok("!2.5Aa4 != 0", MetaNum("!2.5Aa4").neq(0), MetaNum("!2.5Aa4").toString());
+  ok("!1.5Aa4 != 0", MetaNum("!1.5Aa4").neq(0), MetaNum("!1.5Aa4").toString());
+  ok("!1Aa1.5 != 0", MetaNum("!1Aa1.5").neq(0), MetaNum("!1Aa1.5").toString());
+  // formula: !αAaβ == !Aa(β + log5(α/2))
+  ok("!2.5Aa4 == !Aa(4+log5(2.5/2))",
+    MetaNum("!2.5Aa4").eq(buildAa(4 + log5(2.5 / 2))));
+  ok("!1.5Aa4 == !Aa(4+log5(1.5/2))",
+    MetaNum("!1.5Aa4").eq(buildAa(4 + log5(1.5 / 2))));
+  // no regression on the documented anchor (α=2 → log5(1)=0)
+  ok("!2.0000Aa4 === !Aa4", MetaNum("!2.0000Aa4").eq(MetaNum("!Aa4")));
+  // legacy 1.0+ spelling still means "no mantissa"
+  ok("!1.000Aa5 === !Aa5 (legacy)", MetaNum("!1.000Aa5").eq(MetaNum("!Aa5")));
+  // formatter round-trips the true value as the approximate binary form
+  // (issue #20: the README convention α'Aaβ' with α' = 2·5^(x−β'); the
+  // mantissa carries FORMAT_OPTIONS digits, so the round-trip is exact only
+  // when α' is exactly representable — otherwise use rtApprox below)
+  eq("format(!2.5Aa4)", format(MetaNum("!2.5Aa4")), "!2.500Aa4");
+  ok("round-trip !2.5Aa4", MetaNum(format(MetaNum("!2.5Aa4"))).eq(MetaNum("!2.5Aa4")));
+  ok("round-trip !2.376Aa999", MetaNum(format(MetaNum("!2.376Aa999"))).eq(MetaNum("!2.376Aa999")));
+  // issue #20 vectors: the diagonal letters follow the README — Aaα = 10{α}10
+  // (Aa1.5 = 10{2}4.472 = [[924.19,3]], between Aa1 and Aa2), and format is
+  // the APPROXIMATE form α'Aaβ' (α' decimal, β' integer), which the single-
+  // letter machinery then carries to its final display.
+  eq("format(Aa1.5)", format(MetaNum("Aa1.5")), "EE1.537E924");
+  eq("format(Aa2.5)", format(MetaNum("Aa2.5")), "FFFE1.745E9");
+  ok("Aa1.5 = 10{2}(2·5^0.5) → [[924.19,3]]",
+    MetaNum("Aa1.5").eq(MetaNum(10).arrow(2)(2 * Math.pow(5, 0.5))) &&
+    MetaNum("Aa1.5").array.length === 1 && MetaNum("Aa1.5").array[0].length === 2 &&
+    Math.abs(MetaNum("Aa1.5").array[0][0] - 924.1866041055171) < 1e-9 &&
+    MetaNum("Aa1.5").array[0][1] === 3);
+  ok("Aa1 < Aa1.5 < Aa2 (README ordering)",
+    MetaNum("Aa1").lt(MetaNum("Aa1.5")) && MetaNum("Aa1.5").lt(MetaNum("Aa2")));
+  // approximate round-trip: the display carries only FORMAT_OPTIONS digits
+  function rtApprox(s, tol) {
+    var v = MetaNum(s);
+    var m2 = MetaNum.fromString(format(v));
+    if (v.eq(m2)) return true;
+    if (v.cmp_tolerance(m2, tol) === 0) return true;
+    // !Aa compact markers compare structurally — compare the smooth argument
+    // x ([[x],[1,0×k,1]] = 10{ω^k}(x); [[1],[α,β]] = 10{β+1}(α))
+    function smoothArg(m) {
+      if (m.layer === 0 && m.array.length === 2 && m.array[0].length === 1 &&
+          m.array[1].length >= 3 && m.array[1][0] === 1 &&
+          m.array[1][m.array[1].length - 1] === 1) {
+        for (var i = 1; i < m.array[1].length - 1; i++) if (m.array[1][i] !== 0) return null;
+        return m.array[0][0];
+      }
+      if (m.layer === 0 && m.array.length === 2 && m.array[0].length === 1 &&
+          m.array[0][0] === 1 && m.array[1].length === 2) {
+        return m.array[1][1] + log5(m.array[1][0] / 2);
+      }
+      return null;
+    }
+    var av = smoothArg(v), am = smoothArg(m2);
+    if (av !== null && am !== null) {
+      return Math.abs(av - am) <= tol * Math.max(Math.abs(av), Math.abs(am));
+    }
+    return false;
+  }
+  ok("round-trip Aa1.5 (approx)", rtApprox("Aa1.5", 1e-3));
+  ok("round-trip Aa2.5 (approx)", rtApprox("Aa2.5", 1e-3));
+  ok("round-trip !Aa2.5 (approx)", rtApprox("!Aa2.5", 1e-2));
+  ok("round-trip !1Aa1.5 (approx)", rtApprox("!1Aa1.5", 1e-2));
+  ok("round-trip !Aa0.5 (approx)", rtApprox("!Aa0.5", 1e-2));
+  // smooth (non-integer) family stays monotone inside the compact forms
+  ok("!Aa1.5 < !Aa2.5 < !Aa3.5",
+    MetaNum("!Aa1.5").lt(MetaNum("!Aa2.5")) && MetaNum("!Aa2.5").lt(MetaNum("!Aa3.5")));
+})();
+
+// ─────────────────────────────────────────────────────────────
+// D07 · 2{λ}2 = 4 (notation-semantics §3, rule 3)
+// ─────────────────────────────────────────────────────────────
+console.log("\n=== D07 2{lambda}2 ===");
+(function () {
+  var ops = ["aperiote", "aperionate", "iter", "itermult", "cuboiter", "expoiter",
+             "trioterate", "trixxate", "aperixxate", "epsilonate"];
+  // B2-a: for base 2 every infinite/successor level collapses to 4 for any
+  // integer y >= 2 (rule 3 turns the argument into 2).
+  [2, 3, 5, 1000].forEach(function (y) {
+    ops.forEach(function (op) {
+      var v = new MetaNum(2)[op](y);
+      ok("2{" + op + "}" + y + " === 4", v.eq(4), v.toString());
+    });
+  });
+  // finite levels must NOT collapse (2{1}3 = 8, 2{2}3 = 16)
+  ok("2{1}3 === 8 (finite unaffected)", new MetaNum(2).arrow(1)(3).eq(8));
+  ok("2{2}3 === 16 (finite unaffected)", new MetaNum(2).arrow(2)(3).eq(16));
+  ok("3{ω²}1 === 3 (y=1)", new MetaNum(3).aperionate(1).eq(3));
+  ok("3{ω^ω}1 === 3 (y=1)", new MetaNum(3).trixxate(1).eq(3));
+})();
+
+// ─────────────────────────────────────────────────────────────
+
+console.log("\n=== merged issue-17 regression Done ===");
+
+// ─────────────────────────────────────────────────────────────
+// v2.1.0: hardy(x, base) / FGH(x, y)
+// ─────────────────────────────────────────────────────────────
+console.log("\n=== hardy base extension ===");
+(function () {
+  // the base-10 path is the historical behaviour (hardy(n) = H_n(10))
+  ok("hardy(0) = 10", MetaNum.hardy(0).eq(10));
+  ok("hardy(9) = 19", MetaNum.hardy(9).eq(19));
+  ok("hardy(10) = 20", MetaNum.hardy(10).eq(20));
+  ok("hardy(100) = 10240", MetaNum.hardy(100).eq(10240));
+  // the second argument is the base: the digits of x are read in that base
+  eq("hardy(10,8) = H_{ω+2}(8) = 20", MetaNum.hardy(10, 8).toString(), "20");
+  eq("hardy(10,4) = H_{ω*2+2}(4) = 24", MetaNum.hardy(10, 4).toString(), "24");
+  eq("hardy(5,8) = H_5(8) = 13", MetaNum.hardy(5, 8).toString(), "13");
+  eq("hardy(9,10) = 19 (default base)", MetaNum.hardy(9, 10).toString(), "19");
+  ok("hardy(64,8) = H_{ω^2}(8) = 2048 (64 = 100 base 8)", MetaNum.hardy(64, 8).eq(2048));
+  ok("hardy(1000,2) huge but finite", MetaNum.hardy(1000, 2).isFinite());
+  ok("hardy monotone in x: hardy(10,8) < hardy(11,8)",
+    MetaNum.hardy(10, 8).lt(MetaNum.hardy(11, 8)));
+  // validation: integer base in [2, 1000]
+  var threw = 0;
+  [1, 1001, 2.5, "x"].forEach(function (b) {
+    try { MetaNum.hardy(10, b); } catch (e) { threw++; }
+  });
+  ok("hardy rejects bases outside [2,1000] / non-integers", threw === 4);
+  // FGH(x, y) = hardy(y^x, y)
+  ok("FGH(3,10) = hardy(1000,10)", MetaNum.fgh(3, 10).eq(MetaNum.hardy(1000, 10)));
+  ok("FGH(2,8) = hardy(64,8) = 2048", MetaNum.fgh(2, 8).eq(2048));
+  ok("FGH(0,10) = hardy(1,10) = 11", MetaNum.fgh(0, 10).eq(11));
+  ok("FGH monotone in x", MetaNum.fgh(2, 10).lt(MetaNum.fgh(3, 10)));
+  ok("FGH validates the base too", (function () {
+    try { MetaNum.fgh(2, 1); return false; } catch (e) { return true; }
+  })());
+})();
+
+console.log("\n=== hardy/FGH tests Done ===");
