@@ -11,8 +11,8 @@
 
 | Issue | 验收结果（实测） | 结论 |
 |---|---|---|
-| #19 | 部分满足：`@Aa2..@Aa10` / `#Aa2..#Aa10` 往返 `true`；`@Aa1` / `#Aa1` 输出 `!1.000N10` / `@1.000N10`，parser 解析为 `0`；`@Aa1.5` / `#Aa2.5` 亦不往返 | **保持 open** |
-| #20 | 部分满足：`Aa1.5`、`!Aa2.5` 等仅近似往返；`Aa1.9` 输出 `3.261F8`，parser 解析为 `0`；未达到 `eq` 精度 | **保持 open** |
+| #19 | 已修（整数 n）：`@Aa1`/`#Aa1` 经 `!1.000N10`/`@1.000N10` 精确往返；`@Aa2..@Aa10`/`#Aa2..#Aa10` 往返 `true`。非整数层形（`@Aa1.5`）仍不往返，另记残余 | **可关闭**（附非整数残余） |
+| #20 | 已修：`Aa1.05..Aa1.95` 全部可解析并在 slog 容差内往返；`αΓβ`（`3.261F8`）不再解析为 `0`。精度仍为显示有效位级别（验收允许容差） | **可关闭** |
 | #21 | 代码与回归已满足（`test_mixed.js` D02 段）；§4 表格已补次单位/负值行 | **可关闭** |
 | #22 | 按设计不实现，`d07-engine-design.md` §7 已记录复评与撤回理由 | **可关闭（not planned）** |
 | #23 | README 四处矛盾已改，并已链接 `docs/notation-semantics.md` | **可关闭** |
@@ -49,10 +49,12 @@ format(MetaNum("!Aa3"))  === "!2.000Aa3"      // 已对齐（anchor-B），往�
 
 **位置**：`format-metanum.js` `formatLayer`（`canCompact` 分支 + `aaZeroCount` 符号层路径）。
 **影响**：`@`/`#` 及更高层的显示与 `!` 层不一致，且 `format` 输出不能被 parser 还原。
+**状态**：已修（整数 n）。`@Aa1`/`#Aa1` 的单字母 N-进位形由 `metanum.js` 的 symbol+single-letter 分支解析；非整数层形仍残余。
 **验收**
-- [ ] `@Aan`/`#Aan` 显示与 `!Aan` 同构（参数取真值），`parse(format(x)).eq(x)`；
-- [ ] `test_mixed.js` 相关断言同步（`@Aa3`、`#Aa5` 等）；
-- [ ] 不回归 `!Aa*`。
+- [x] `@Aan`/`#Aan` 显示与 `!Aan` 同构（整数 n 取真值），`parse(format(x)).eq(x)`；
+- [x] `test_mixed.js` 相关断言同步（`@Aa1`、`#Aa1`、`@Aa3`、`#Aa5` 等）；
+- [x] 不回归 `!Aa*`。
+**残余**：`@Aa1.5` → `!4.472Aaa1` 仍丢层，建议另开小 issue。
 **依赖**：需先确认符号层规范写法（`@2.000Aa3` vs `!2.000Aa3`）。**建议单开 issue。**
 
 ---
@@ -73,10 +75,12 @@ format(MetaNum("!1Aa1.5")) === "2.236Aa1"   // 往返 false
 parser 反推 `x = β + log₅(α/2)` 有浮点误差；或形状未被 `formatBangAaValue` 覆盖（x<2）。
 **位置**：`format-metanum.js` `formatBangAaValue` / `formatOrdinal`；`metanum.js` `aaBinMatch`。
 **影响**：这批值的 `format` 不能精确还原（仅容差意义下）。
+**状态**：已修（容差级）。x∈[1,2) 的 `αΓβ`（F..Z）分支已补，`Aa1.05..Aa1.95` 全部可解析并在 slog 容差内往返。
 **验收**
-- [ ] 为 `x ∈ [1,2)` 增加规范形（与 `Aa x` 一致）并往返；
-- [ ] 提高 mantissa 有效位（至少覆盖到 `eq` 精度）或引入带容差的 `formatRoundTrip` 断言；
-- [ ] `test_mixed.js` 增加往返/容差向量。
+- [x] 为 `x ∈ [1,2)` 增加规范形（与 `Aa x` 一致）并往返（容差）；
+- [x] 提高 mantissa 有效位（至少覆盖到 `eq` 精度）或引入带容差的 `formatRoundTrip` 断言；
+- [x] `test_mixed.js` 增加往返/容差向量。
+- [x] `Aa1.05..Aa1.95` 的 `αΓβ`（F..Z）解析与 slog 容差往返（fix/19-20-roundtrip）。
 
 ---
 
@@ -96,7 +100,8 @@ MetaNum(-5).toBeaf()        === "{5}"     // 负号丢失
 **验收**
 - [ ] 次单位（`sign 2/-2`）与负值要么抛 `MetaNumUnrepresentableError`，要么给出明确降级并在
       `notation-semantics.md` §4 表格补一行；
-- [ ] `test_mixed.js` 覆盖。
+- [x] `test_mixed.js` 覆盖。
+- [x] §4 表格已补次单位/负值行（PR #3）。
 **备注**：BEAF 本不表示负数/分数，倾向统一抛错（与 D03 一致）。
 
 ---

@@ -2133,6 +2133,15 @@ console.log("\n=== symbol layer semantics ===");
   checkRT("@Aa5", "@Aa5");
   checkRT("#Aa5", "#Aa5");
   checkRT("!Ab5", "!Ab5");
+
+  // issue #19 residual: n=1 carries to the single-letter N10 spelling.  The
+  // layer prefix must survive (format → parse → eq), not parse to 0.
+  function fmtRT(input) {
+    var v = MetaNum(input);
+    return v.eq(MetaNum(format(v)));
+  }
+  ok("format round-trip @Aa1 (!1.000N10)", fmtRT("@Aa1"), format(MetaNum("@Aa1")));
+  ok("format round-trip #Aa1 (@1.000N10)", fmtRT("#Aa1"), format(MetaNum("#Aa1")));
 })();
 
 console.log("\n=== two-letter rule ===");
@@ -2637,6 +2646,28 @@ console.log("\n=== D06 !alpha Aa beta ===");
   ok("round-trip !Aa2.5 (approx)", rtApprox("!Aa2.5", 1e-2));
   ok("round-trip !1Aa1.5 (approx)", rtApprox("!1Aa1.5", 1e-2));
   ok("round-trip !Aa0.5 (approx)", rtApprox("!Aa0.5", 1e-2));
+  // issue #20 residual: x∈[1,2) sometimes formats as αΓβ with a single
+  // letter F..Z (Aa1.65 → 4.935F5).  Those used to parse to 0; the αΓβ
+  // branch now reads them back, and the 4-digit mantissa is checked in slog
+  // space (equivalent to the tolerance allowed by the acceptance criteria).
+  function slogClose(input, tol) {
+    var v = MetaNum(input);
+    var back = MetaNum(format(v));
+    var d = Number(v.slog(10).toString()) - Number(back.slog(10).toString());
+    return Math.abs(d) <= tol;
+  }
+  ok("format(Aa1.65) = 4.935F5, slog round-trip",
+    format(MetaNum("Aa1.65")) === "4.935F5" && slogClose("Aa1.65", 1e-3), format(MetaNum("Aa1.65")));
+  ok("format(Aa1.95) = 1.686F9, slog round-trip",
+    format(MetaNum("Aa1.95")) === "1.686F9" && slogClose("Aa1.95", 1e-3), format(MetaNum("Aa1.95")));
+  ok("3.261F8 parses (not 0)", MetaNum("3.261F8").neq(0), MetaNum("3.261F8").toString());
+  var bad20 = [];
+  for (var xi = 105; xi <= 195; xi += 10) {
+    var s20 = "Aa" + (xi / 100).toFixed(2);
+    if (!slogClose(s20, 1e-3)) bad20.push(s20);
+  }
+  ok("Aa1.05..Aa1.95 all format round-trip in slog space",
+    bad20.length === 0, bad20.join(","));
   // smooth (non-integer) family stays monotone inside the compact forms
   ok("!Aa1.5 < !Aa2.5 < !Aa3.5",
     MetaNum("!Aa1.5").lt(MetaNum("!Aa2.5")) && MetaNum("!Aa2.5").lt(MetaNum("!Aa3.5")));
