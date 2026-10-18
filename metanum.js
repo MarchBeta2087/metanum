@@ -5766,6 +5766,41 @@
       // the fractional-argument machinery and is not accepted here.
       rem = rem.replace(/^([!@#\$%&~<>?]?)1\.0+(?=[A-Z])/, '$1');
 
+      // #19 — layer symbol + SINGLE-letter form.  format() emits this for
+      // @Aa1 (!1.000N10) and for @Aa<n> past multiLetterLimit.  Parse the
+      // inner value at layer 0 first, then add exactly one layer per symbol
+      // (! → 1, @ → 2, …).  Setting the layer before parsing would make the
+      // normalizer rewrite the inner cascade into a row and lose its shape.
+      var symSingleMatch = rem.match(/^([!@#\$%&~<>?])([A-Z])(\d+(?:\.\d+)?(?:[Ee]\d+)?)$/);
+      if (symSingleMatch) {
+        var ssVal = Q.fromString(symSingleMatch[2] + symSingleMatch[3]);
+        ssVal.layer = (ssVal.layer || 0) +
+          ("!@#$%&~<>?".indexOf(symSingleMatch[1]) + 1);
+        if (negateIt) ssVal.sign = -1;
+        return ssVal;
+      }
+
+      // #20 — α + single letter (F..Z) + β: αΓβ = Γ(β + log10 α).
+      // format() emits this for the sub-unit diagonal (Aa1.9 → 3.261F8).
+      // E is deliberately excluded: it is scientific notation above.
+      var alphaSingleMatch = rem.match(/^(\d+(?:\.\d+)?)([F-Z])(\d+(?:\.\d+)?(?:[Ee]\d+)?)$/);
+      var alphaSingleSymMatch = rem.match(/^([!@#\$%&~<>?])(\d+(?:\.\d+)?)([F-Z])(\d+(?:\.\d+)?(?:[Ee]\d+)?)$/);
+      if (alphaSingleMatch || alphaSingleSymMatch) {
+        var alsSym = alphaSingleSymMatch ? alphaSingleSymMatch[1] : "";
+        var alsAlpha = Number(alphaSingleSymMatch ? alphaSingleSymMatch[2] : alphaSingleMatch[1]);
+        var alsLetter = alphaSingleSymMatch ? alphaSingleSymMatch[3] : alphaSingleMatch[2];
+        var alsBeta = Number(alphaSingleSymMatch ? alphaSingleSymMatch[4] : alphaSingleMatch[3]);
+        if (isFinite(alsAlpha) && alsAlpha > 0 && isFinite(alsBeta)) {
+          var alsVal = Q.fromString(alsLetter + String(alsBeta + Math.log10(alsAlpha)));
+          if (alsSym) {
+            alsVal.layer = (alsVal.layer || 0) +
+              ("!@#$%&~<>?".indexOf(alsSym) + 1);
+          }
+          if (negateIt) alsVal.sign = -1;
+          return alsVal;
+        }
+      }
+
       // #19 — the symbol layers of the Aa diagonal: every symbol adds one ω^
       // (!Aa<n> = 10{ω^n}10 layer 0, @Aa<n> layer 1, #Aa<n> layer 2, …), so the
       // same rule-3 cascade is stored and `layer` carries the extra ω^'s.
