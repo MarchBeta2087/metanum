@@ -76,7 +76,7 @@ parser 反推 `x = β + log₅(α/2)` 有浮点误差；或形状未被 `formatB
 **验收**
 - [ ] 为 `x ∈ [1,2)` 增加规范形（与 `Aa x` 一致）并往返；
 - [ ] 提高 mantissa 有效位（至少覆盖到 `eq` 精度）或引入带容差的 `formatRoundTrip` 断言；
-- [ ] `test.js` 增加往返/容差向量。
+- [ ] `test_mixed.js` 增加往返/容差向量。
 
 ---
 
@@ -96,7 +96,7 @@ MetaNum(-5).toBeaf()        === "{5}"     // 负号丢失
 **验收**
 - [ ] 次单位（`sign 2/-2`）与负值要么抛 `MetaNumUnrepresentableError`，要么给出明确降级并在
       `notation-semantics.md` §4 表格补一行；
-- [ ] `test.js` 覆盖。
+- [ ] `test_mixed.js` 覆盖。
 **备注**：BEAF 本不表示负数/分数，倾向统一抛错（与 D03 一致）。
 
 ---
@@ -140,4 +140,4 @@ MetaNum(-5).toBeaf()        === "{5}"     // 负号丢失
 ## 附：已完成（不再跟踪）
 
 - D01–D04（`cdf08fb`）、D05/D06/D07 主体（`5262803`/`029eac4`/`8643ee6`）、S01（`notation-semantics.md`）。
-- `package.json` 的 `test` 已指向 `test.js`，移除缺失的 `example`。
+- `package.json` 的 `test` 已指向 `test_mixed.js`；v2.1.0 起 `test.js` 已并入 `test_mixed.js`。

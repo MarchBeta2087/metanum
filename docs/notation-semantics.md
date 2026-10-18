@@ -4,7 +4,7 @@
 |---|---|
 | 上游 Issue | <https://github.com/dlsdl/metanum/issues/17> |
 | 基线版本 | metanum v2.0.2，Node 22 |
-| 关联 | [`issue-17-defects.md`](issue-17-defects.md)、[`repro/issue-17.js`](repro/issue-17.js)、[`../test.js`](../test.js) |
+| 关联 | [`issue-17-defects.md`](issue-17-defects.md)、[`repro/issue-17.js`](repro/issue-17.js)、[`../test_mixed.js`](../test_mixed.js) |
 | 状态 | S01 的 5 项决策已定稿（2026-10-13） |
 
 > 本文是 S01（spec gap）的落定文档。D05/D06/D07 的修复依据此文档。
@@ -85,7 +85,7 @@ formatter 新增 `formatBangAaValue`：识别去层形状 `[[x],[1,0×k,1]]`（k
 
 **保留项**：`α = 1.000`（带小数点的 legacy 写法）仍按“无 mantissa”处理（`!1.000Aa5 = !Aa5`），仅 α=1 且无小数时走公式。
 
-**验收向量**（`test.js`）：`!2.5Aa4 == !Aa(4+log₅(2.5/2))`；`!1.5Aa4`/`!1Aa1.5` 非 0；`!2.0000Aa4 == !Aa4`；`format(!2.5Aa4) == "!2.500Aa4"` 且往返；`!2.376Aa999` 往返；`!1.000Aa5 == !Aa5` 不回归。
+**验收向量**（`test_mixed.js`）：`!2.5Aa4 == !Aa(4+log₅(2.5/2))`；`!1.5Aa4`/`!1Aa1.5` 非 0；`!2.0000Aa4 == !Aa4`；`format(!2.5Aa4) == "!2.500Aa4"` 且往返；`!2.376Aa999` 往返；`!1.000Aa5 == !Aa5` 不回归。
 
 **已知残余**（精度/边界）：
 - `!1Aa1.5`、`!Aa2.5` 等 x<2 或 mantissa 位数不足的值，`format` 往返在浮点精度下不严格相等（需容差）；
