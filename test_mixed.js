@@ -2142,6 +2142,12 @@ console.log("\n=== symbol layer semantics ===");
   }
   ok("format round-trip @Aa1 (!1.000N10)", fmtRT("@Aa1"), format(MetaNum("@Aa1")));
   ok("format round-trip #Aa1 (@1.000N10)", fmtRT("#Aa1"), format(MetaNum("#Aa1")));
+
+  // issue #26: non-integer multi-a markers use the exact token spelling
+  // (Aaa1.5) instead of the rounded αAaaβ form (4.472Aaa1).
+  ok("format round-trip @Aa1.5 (!Aaa1.5)", fmtRT("@Aa1.5"), format(MetaNum("@Aa1.5")));
+  ok("format round-trip @Aa2.5 (!Aaaa2.5)", fmtRT("@Aa2.5"), format(MetaNum("@Aa2.5")));
+  ok("format round-trip #Aa2.5 (@Aaaa2.5)", fmtRT("#Aa2.5"), format(MetaNum("#Aa2.5")));
 })();
 
 console.log("\n=== two-letter rule ===");
