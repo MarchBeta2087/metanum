@@ -5,7 +5,7 @@
 | 来源 | Phase 1/2 + A1 + B2-a 收尾时登记的残余（D01–D07 主体已修复） |
 | 基线 | fork `fix/issue-17-phase1` @ `8643ee6` |
 | 关联 | [`issue-17-defects.md`](issue-17-defects.md)、[`notation-semantics.md`](notation-semantics.md)、[`d07-engine-design.md`](d07-engine-design.md) |
-| 状态 | 已关闭 #19–#24（上游 #25 已合并）；非整数层形残余 #26 |
+| 状态 | 已关闭 #19–#24（上游 #25 已合并）；残余 #26 已修（token 形） |
 
 ## 关闭判定（v2.1.0，2026-10-18）
 
@@ -17,6 +17,7 @@
 | #22 | 按设计不实现，`d07-engine-design.md` §7 已记录复评与撤回理由 | **已关闭（not planned）** |
 | #23 | README 四处矛盾已改，并已链接 `docs/notation-semantics.md` | **已关闭** |
 | #24 | 特性未实现，形式语义未并入规范；#17 已明确“很可能永不实现” | **已关闭（not planned）** |
+| #26 | 已修：`@Aa1.5`/`@Aa2.5`/`#Aa2.5` 输出 `!Aaa1.5`/`!Aaaa2.5`/`@Aaaa2.5` 并精确往返；超过 `multiLetterLimit` 的标记仍为进位近似 | **可关闭** |
 
 复现（本 PR 后）：`node test_mixed.js` **1149/0**；
 `node docs/repro/issue-17.js` 中 D01–D04/D07 全部通过。
@@ -54,7 +55,7 @@ format(MetaNum("!Aa3"))  === "!2.000Aa3"      // 已对齐（anchor-B），往�
 - [x] `@Aan`/`#Aan` 显示与 `!Aan` 同构（整数 n 取真值），`parse(format(x)).eq(x)`；
 - [x] `test_mixed.js` 相关断言同步（`@Aa1`、`#Aa1`、`@Aa3`、`#Aa5` 等）；
 - [x] 不回归 `!Aa*`。
-**残余**：`@Aa1.5` → `!4.472Aaa1` 仍不往返，已记录为 #26。
+**残余**：`@Aa1.5` → `!Aaa1.5` 已改为精确 token 形（#26 已修）；超过 `multiLetterLimit` 的标记仍为进位近似。
 **依赖**：已确认符号层规范写法（`@2.000Aa3` 与 `!2.000Aa3` 各加一层）；非整数层形见 #26。
 
 ---
