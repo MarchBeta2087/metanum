@@ -3,8 +3,8 @@
 | 项目 | 内容 |
 |---|---|
 | 上游 Issue | <https://github.com/dlsdl/metanum/issues/17> |
-| 基线版本 | metanum v2.0.2，Node 22 |
-| 关联 | [`issue-17-defects.md`](issue-17-defects.md)、[`repro/issue-17.js`](repro/issue-17.js)、[`../test.js`](../test.js) |
+| 基线版本 | metanum v2.1.0，Node 22 |
+| 关联 | [`issue-17-defects.md`](issue-17-defects.md)、[`repro/issue-17.js`](repro/issue-17.js)、[`../test_mixed.js`](../test_mixed.js) |
 | 状态 | S01 的 5 项决策已定稿（2026-10-13） |
 
 > 本文是 S01（spec gap）的落定文档。D05/D06/D07 的修复依据此文档。
@@ -41,8 +41,9 @@
   超出预算时（n ≥ maxCols）层数 +1，其余按去掉 ! 的方式处理：`[[n],[1,0,1]]`。
 - α∈[0,1) 时 `⌊α⌋=0`，取 `max(1,⌊α⌋)=1`，即 `!Aaα = Aaα`（第一对角元的连续延拓）。
 - α 非整数时保持本决策的连续延拓（`!Aa1.5 = Aa1.5`、`!Aa2.5 = Aaa2.5`），其紧凑形
-  `[[x],[1,0×k,1]]` 的 format 拼写为裸形式 `Aa x`（x<2）/ `!Aa x`（x≥2），精确往返
-  （issue #20：旧的二进制 `!αAaβ` 尾数反推有浮点误差）。
+  `[[x],[1,0×k,1]]` 的 format 拼写为裸形式 `Aa x`（x<2）/ `!Aa x`（x≥2），按显示有效位
+  近似往返（容差；issue #20：旧的二进制 `!αAaβ` 尾数反推有浮点误差，且 x∈[1,2)
+  被 carrier 到 `αΓβ` 时 parser 会丢失整个值）。
 
 **为什么不是 README 字面式**
 
@@ -85,11 +86,11 @@ formatter 新增 `formatBangAaValue`：识别去层形状 `[[x],[1,0×k,1]]`（k
 
 **保留项**：`α = 1.000`（带小数点的 legacy 写法）仍按“无 mantissa”处理（`!1.000Aa5 = !Aa5`），仅 α=1 且无小数时走公式。
 
-**验收向量**（`test.js`）：`!2.5Aa4 == !Aa(4+log₅(2.5/2))`；`!1.5Aa4`/`!1Aa1.5` 非 0；`!2.0000Aa4 == !Aa4`；`format(!2.5Aa4) == "!2.500Aa4"` 且往返；`!2.376Aa999` 往返；`!1.000Aa5 == !Aa5` 不回归。
+**验收向量**（`test_mixed.js`）：`!2.5Aa4 == !Aa(4+log₅(2.5/2))`；`!1.5Aa4`/`!1Aa1.5` 非 0；`!2.0000Aa4 == !Aa4`；`format(!2.5Aa4) == "!2.500Aa4"` 且往返；`!2.376Aa999` 往返；`!1.000Aa5 == !Aa5` 不回归；`@Aa1`/`#Aa1` 经 `!1.000N10`/`@1.000N10` 精确往返；`Aa1.05..Aa1.95` 全部在 slog 容差内往返。
 
 **已知残余**（精度/边界）：
 - `!1Aa1.5`、`!Aa2.5` 等 x<2 或 mantissa 位数不足的值，`format` 往返在浮点精度下不严格相等（需容差）；
-- `@`/`#` 等更高符号层仍走旧路径（`formatLayer` 未同步到决策 1B）；
+- 非整数的层形（如 `@Aa1.5` → `!4.472Aaa1`）仍不往返；整数 n 的 `@Aa1`/`#Aa1` 已修复。
 - α≥2 时 `!Aan` 的显示已校正为 anchor-B（`!Aa3` → `!2.000Aa3`，旧为 `2.000Aaaa10`）。
 
 ---
@@ -138,9 +139,14 @@ formatter 新增 `formatBangAaValue`：识别去层形状 `[[x],[1,0×k,1]]`（k
 |---|---|---|
 | `layer=0`，单行，`r0` 长度 1 | `{r0[0]}` | — |
 | `layer=0`，`r0=[e,1]`，`sign=1`，`e≥1` | `{10, e}` | `fromBeaf` 一致 |
+| 次单位（`sign=2` / `sign=-2`） | `{…}⁻¹` / `-{…}⁻¹` | `fromBeaf` 一致 |
+| 负值（`sign=-1`） | `-{…}` | `fromBeaf` 一致 |
 | 其它 `layer=0` 单行（巨大有限值） | `{r0[0]}`（历史近似，README 记录） | — |
 
 **不可表示**：多行（序数行）/ `layer>0` 的值**抛出** `MetaNumUnrepresentableError`（`code = METANUM_UNREPRESENTABLE`）。不输出内部 `[...]`，不使用占位 `?`。
+
+次单位与负值是**明确降级**（不是静默丢失）：符号与底数都写进输出，且 `fromBeaf` 能还原；
+回归向量见 `test_mixed.js` 的 D02 段（`1e-320 → {10,320}⁻¹`、`-5 → -{5}` 等）。
 
 理由：序数行无法反推 BEAF 的迭代次数 `b`，静默降级会掩盖信息丢失。
 

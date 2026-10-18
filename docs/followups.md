@@ -5,7 +5,30 @@
 | 来源 | Phase 1/2 + A1 + B2-a 收尾时登记的残余（D01–D07 主体已修复） |
 | 基线 | fork `fix/issue-17-phase1` @ `8643ee6` |
 | 关联 | [`issue-17-defects.md`](issue-17-defects.md)、[`notation-semantics.md`](notation-semantics.md)、[`d07-engine-design.md`](d07-engine-design.md) |
-| 状态 | 待排期（上游 issue #19–#24） |
+| 状态 | 已判定（2026-10-18，v2.1.0 + 本 PR） |
+
+## 关闭判定（v2.1.0，2026-10-18）
+
+| Issue | 验收结果（实测） | 结论 |
+|---|---|---|
+| #19 | 已修（整数 n）：`@Aa1`/`#Aa1` 经 `!1.000N10`/`@1.000N10` 精确往返；`@Aa2..@Aa10`/`#Aa2..#Aa10` 往返 `true`。非整数层形（`@Aa1.5`）仍不往返，另记残余 | **可关闭**（附非整数残余） |
+| #20 | 已修：`Aa1.05..Aa1.95` 全部可解析并在 slog 容差内往返；`αΓβ`（`3.261F8`）不再解析为 `0`。精度仍为显示有效位级别（验收允许容差） | **可关闭** |
+| #21 | 代码与回归已满足（`test_mixed.js` D02 段）；§4 表格已补次单位/负值行 | **可关闭** |
+| #22 | 按设计不实现，`d07-engine-design.md` §7 已记录复评与撤回理由 | **已关闭（not planned）** |
+| #23 | README 四处矛盾已改，并已链接 `docs/notation-semantics.md` | **可关闭** |
+| #24 | 特性未实现，形式语义未并入规范；#17 已明确“很可能永不实现” | **已关闭（not planned）** |
+
+复现（本 PR 后）：`node test_mixed.js` **1149/0**；
+`node docs/repro/issue-17.js` 中 D01–D04/D07 全部通过。
+#19/#20 的修复向量：
+
+```js
+const M = require("./metanum.js"); global.MetaNum = M;
+const { format } = require("./format-metanum.js");
+for (const s of ["@Aa1", "#Aa1", "Aa1.65", "Aa1.95", "!Aa2.5"])
+  console.log(s, "->", format(M(s)), "parse:", M(format(M(s))).toString());
+// @Aa1 -> !1.000N10 parse: !1.000N10 ; Aa1.65 -> 4.935F5 parse: E^3.69... 10000000000
+```
 
 > 每一项给出：现象 / 位置 / 影响 / 验收 / 依赖 / 优先级。
 > 优先级：**P1** 阻断（无）、**P2** 正确性、**P3** 显示一致性、**P4** 文档/特性。
@@ -26,11 +49,13 @@ format(MetaNum("!Aa3"))  === "!2.000Aa3"      // 已对齐（anchor-B），往�
 
 **位置**：`format-metanum.js` `formatLayer`（`canCompact` 分支 + `aaZeroCount` 符号层路径）。
 **影响**：`@`/`#` 及更高层的显示与 `!` 层不一致，且 `format` 输出不能被 parser 还原。
+**状态**：已修（整数 n）。`@Aa1`/`#Aa1` 的单字母 N-进位形由 `metanum.js` 的 symbol+single-letter 分支解析；非整数层形仍残余。
 **验收**
-- [ ] `@Aan`/`#Aan` 显示与 `!Aan` 同构（参数取真值），`parse(format(x)).eq(x)`；
-- [ ] `test_mixed.js` 相关断言同步（`@Aa3`、`#Aa5` 等）；
-- [ ] 不回归 `!Aa*`。
-**依赖**：需先确认符号层规范写法（`@2.000Aa3` vs `!2.000Aa3`）。**建议单开 issue。**
+- [x] `@Aan`/`#Aan` 显示与 `!Aan` 同构（整数 n 取真值），`parse(format(x)).eq(x)`；
+- [x] `test_mixed.js` 相关断言同步（`@Aa1`、`#Aa1`、`@Aa3`、`#Aa5` 等）；
+- [x] 不回归 `!Aa*`。
+**残余**：`@Aa1.5` → `!4.472Aaa1` 仍丢层，建议另开小 issue。
+**依赖**：已确认符号层规范写法（`@2.000Aa3` 与 `!2.000Aa3` 各加一层）；非整数层形另开 issue。
 
 ---
 
@@ -50,10 +75,12 @@ format(MetaNum("!1Aa1.5")) === "2.236Aa1"   // 往返 false
 parser 反推 `x = β + log₅(α/2)` 有浮点误差；或形状未被 `formatBangAaValue` 覆盖（x<2）。
 **位置**：`format-metanum.js` `formatBangAaValue` / `formatOrdinal`；`metanum.js` `aaBinMatch`。
 **影响**：这批值的 `format` 不能精确还原（仅容差意义下）。
+**状态**：已修（容差级）。x∈[1,2) 的 `αΓβ`（F..Z）分支已补，`Aa1.05..Aa1.95` 全部可解析并在 slog 容差内往返。
 **验收**
-- [ ] 为 `x ∈ [1,2)` 增加规范形（与 `Aa x` 一致）并往返；
-- [ ] 提高 mantissa 有效位（至少覆盖到 `eq` 精度）或引入带容差的 `formatRoundTrip` 断言；
-- [ ] `test.js` 增加往返/容差向量。
+- [x] 为 `x ∈ [1,2)` 增加规范形（与 `Aa x` 一致）并往返（容差）；
+- [x] 提高 mantissa 有效位（至少覆盖到 `eq` 精度）或引入带容差的 `formatRoundTrip` 断言；
+- [x] `test_mixed.js` 增加往返/容差向量。
+- [x] `Aa1.05..Aa1.95` 的 `αΓβ`（F..Z）解析与 slog 容差往返（本 PR）。
 
 ---
 
@@ -73,7 +100,8 @@ MetaNum(-5).toBeaf()        === "{5}"     // 负号丢失
 **验收**
 - [ ] 次单位（`sign 2/-2`）与负值要么抛 `MetaNumUnrepresentableError`，要么给出明确降级并在
       `notation-semantics.md` §4 表格补一行；
-- [ ] `test.js` 覆盖。
+- [x] `test_mixed.js` 覆盖。
+- [x] §4 表格已补次单位/负值行（本 PR）。
 **备注**：BEAF 本不表示负数/分数，倾向统一抛错（与 D03 一致）。
 
 ---
@@ -117,4 +145,4 @@ MetaNum(-5).toBeaf()        === "{5}"     // 负号丢失
 ## 附：已完成（不再跟踪）
 
 - D01–D04（`cdf08fb`）、D05/D06/D07 主体（`5262803`/`029eac4`/`8643ee6`）、S01（`notation-semantics.md`）。
-- `package.json` 的 `test` 已指向 `test.js`，移除缺失的 `example`。
+- `package.json` 的 `test` 已指向 `test_mixed.js`；v2.1.0 起 `test.js` 已并入 `test_mixed.js`。

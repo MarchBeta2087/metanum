@@ -3,10 +3,10 @@
 | 项目 | 内容 |
 |---|---|
 | 上游 Issue | <https://github.com/dlsdl/metanum/issues/17> |
-| 基线版本 | metanum **v2.0.2**（`17fd56e`），Node 22 |
+| 基线版本 | metanum **v2.0.2**（`17fd56e`）；修复验证：**v2.1.0 + 本 PR**，Node 22 |
 | 维护 fork | <https://github.com/MarchBeta2087/metanum> |
 | 复现脚本 | [`docs/repro/issue-17.js`](repro/issue-17.js)（`node docs/repro/issue-17.js`） |
-| 回归测试 | [`test.js`](../test.js)（`npm test`）；全量套件 `npm run test:suite` |
+| 回归测试 | [`test_mixed.js`](../test_mixed.js)（`npm test`；v2.1.0 起 `test.js` 已并入） |
 | 文档状态 | Phase 1（D01–D04）、Phase 2（D05 + D07 部分）已修复；D06 待协同改造 |
 | 语义规范 | [`notation-semantics.md`](notation-semantics.md)（决策 1–5 已定稿） |
 
