@@ -1696,6 +1696,16 @@ function formatOrdinal(num, precision, precision4) {
                     return "!" + regularFormat(1, precision4) +
                            letterName(aaZeroCount) + formatR0Arg(10, precision4)
                 }
+                // #26: a NON-integer single diagonal marker round-trips exactly
+                // as the letter token itself (Aaa1.5), not as the 4-digit
+                // αAaaβ spelling (4.472Aaa1 → x=1.4999811).  The token form
+                // is also the README spelling for fragmented diagonal args.
+                if (base !== top && totalAaCount === 1 && aaZeroCount >= 2) {
+                    let argStr = String(base)
+                    if (/e-/i.test(argStr)) argStr = base.toFixed(20)
+                    argStr = argStr.replace(/e\+?/i, "E")
+                    return letter + argStr
+                }
                 return regularFormat(diagMant, precision4) + letter + commaFormat(diagBeta)
             }
         }
