@@ -1,8 +1,9 @@
 # MetaNum
 
 [![NPM](https://img.shields.io/npm/v/metanum.svg)](https://www.npmjs.com/package/metanum)
+[![tests](https://github.com/MarchBeta2087/metanum/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/MarchBeta2087/metanum/actions/workflows/test.yml)
 
-- MetaNum v2.0 by dlsdl
+- MetaNum v2.1.0 by dlsdl
 
 A huge number library holding up to X↑↑X&9e15.
 
@@ -23,6 +24,10 @@ In Fast Growing Hierarchy, a metanum number is nearly `f_ω^ω^…(layer-1 ω^'s
 ```bash
 npm install metanum
 ```
+
+## Development
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Run `npm test` (Node 22); the regression suite is `test_mixed.js`.
 
 ## Creating Instances
 
