@@ -138,9 +138,14 @@ formatter 新增 `formatBangAaValue`：识别去层形状 `[[x],[1,0×k,1]]`（k
 |---|---|---|
 | `layer=0`，单行，`r0` 长度 1 | `{r0[0]}` | — |
 | `layer=0`，`r0=[e,1]`，`sign=1`，`e≥1` | `{10, e}` | `fromBeaf` 一致 |
+| 次单位（`sign=2` / `sign=-2`） | `{…}⁻¹` / `-{…}⁻¹` | `fromBeaf` 一致 |
+| 负值（`sign=-1`） | `-{…}` | `fromBeaf` 一致 |
 | 其它 `layer=0` 单行（巨大有限值） | `{r0[0]}`（历史近似，README 记录） | — |
 
 **不可表示**：多行（序数行）/ `layer>0` 的值**抛出** `MetaNumUnrepresentableError`（`code = METANUM_UNREPRESENTABLE`）。不输出内部 `[...]`，不使用占位 `?`。
+
+次单位与负值是**明确降级**（不是静默丢失）：符号与底数都写进输出，且 `fromBeaf` 能还原；
+回归向量见 `test_mixed.js` 的 D02 段（`1e-320 → {10,320}⁻¹`、`-5 → -{5}` 等）。
 
 理由：序数行无法反推 BEAF 的迭代次数 `b`，静默降级会掩盖信息丢失。
 
