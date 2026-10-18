@@ -3,7 +3,7 @@
 | 项目 | 内容 |
 |---|---|
 | 上游 Issue | <https://github.com/dlsdl/metanum/issues/17> |
-| 基线版本 | metanum **v2.0.2**（`17fd56e`），Node 22 |
+| 基线版本 | metanum **v2.0.2**（`17fd56e`）；修复验证：**v2.1.0 + 本 PR**，Node 22 |
 | 维护 fork | <https://github.com/MarchBeta2087/metanum> |
 | 复现脚本 | [`docs/repro/issue-17.js`](repro/issue-17.js)（`node docs/repro/issue-17.js`） |
 | 回归测试 | [`test_mixed.js`](../test_mixed.js)（`npm test`；v2.1.0 起 `test.js` 已并入） |
