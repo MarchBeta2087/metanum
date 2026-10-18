@@ -3,7 +3,7 @@
 | 项目 | 内容 |
 |---|---|
 | 上游 Issue | <https://github.com/dlsdl/metanum/issues/17> |
-| 基线版本 | metanum v2.0.2，Node 22 |
+| 基线版本 | metanum v2.1.0，Node 22 |
 | 关联 | [`issue-17-defects.md`](issue-17-defects.md)、[`repro/issue-17.js`](repro/issue-17.js)、[`../test_mixed.js`](../test_mixed.js) |
 | 状态 | S01 的 5 项决策已定稿（2026-10-13） |
 
