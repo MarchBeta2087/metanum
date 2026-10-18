@@ -5731,6 +5731,28 @@
         }
       }
 
+      // #26 — legacy binary form with diagonal depth k≥2: [sym] α A(a×k) β
+      // is [sym] A(a×k)(β + log₅(α/2)).  Current format() uses the exact
+      // token spelling (Aaa1.5) for these values, but the older
+      // @Aa1.5 → "!4.472Aaa1" / #Aa2.5 → "@4.472Aaaa2" spellings must keep
+      // parsing to the right depth.  (k=1 keeps decision-1B semantics above.)
+      var aaDeepMatch = rem.match(/^([!@#\$%&~<>?]?)(\d+(?:\.\d+)?)A(a{2,})(\d+(?:\.\d+)?(?:[Ee]\d+)?)$/);
+      if (aaDeepMatch) {
+        var adSym = aaDeepMatch[1] || "";
+        var adAlpha = Number(aaDeepMatch[2]);
+        var adDepth = aaDeepMatch[3].length;
+        var adBeta = Number(aaDeepMatch[4]);
+        if (isFinite(adAlpha) && adAlpha > 0 && isFinite(adBeta)) {
+          var adX = adBeta + Math.log(adAlpha / 2) / Math.log(5);
+          var adVal = Q.fromString("A" + new Array(adDepth + 1).join("a") + String(adX));
+          if (adSym) {
+            adVal.layer = (adVal.layer || 0) + ("!@#$%&~<>?".indexOf(adSym) + 1);
+          }
+          if (negateIt) adVal.sign = -1;
+          return adVal;
+        }
+      }
+
       // Canonical diagonal-letter output "mantissa LETTER β" (LETTER any
       // multi-letter token ending in 'a'), with the dlsdl diagonal mantissa
       // α ∈ [2,10): the exact anchor α=2.000 gives the plain letter application
