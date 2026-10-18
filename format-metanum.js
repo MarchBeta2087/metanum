@@ -23,6 +23,10 @@ const FORMAT_OPTIONS = {
   epsilonSignificantDigits: 6   //0~9
 }
 
+// #28: keep the exact A(a×k) token past multiLetterLimit up to this many a's;
+// beyond it, fall back to the historical single-letter carry approximation.
+const MULTI_TOKEN_CAP = 64
+
 // ─── Utility Functions ───────────────────────────────────────────
 
 function commaFormat(num) {
@@ -934,24 +938,25 @@ function formatLayer(num, precision, precision2, precision3, precision4) {
         let mInt = Math.floor(compactBase)
         let frac = compactBase - mInt
         let mant = 2 * Math.pow(5, frac)
-        let limit = Math.max(2, FORMAT_OPTIONS.multiLetterLimit | 0)
-        if (mInt + 1 > limit) {
-            // Carry to the SINGLE-letter form sym αΓβ — same rule as "!":
-            // Γ is the finite level the diagonal names (10{ω^m}10 → letter of
-            // m) and β is the diagonal's argument, so the symbols stack
-            // identically: 10{ω^10}10 → !1.000N10, 10{ω^(ω^10)}10 → @1.000N10
-            let total = num.layer + 1
-            let body = regularFormat(1, precision4) + letterName(mInt) +
-                       formatR0Arg(10, precision4)
-            if (total <= SYMBOLS.length) return SYMBOLS[total - 1] + body
-            return body + "ε" + commaFormat(total)
+        // #28: past multiLetterLimit the old single-letter carry (!1.000N10)
+        // did not round-trip — it added a layer and could not name the exact
+        // diagonal.  Keep the exact A(a×m)10 token while the string stays
+        // reasonable; only fall back to the carry past a hard safety cap.
+        if (mInt <= MULTI_TOKEN_CAP) {
+            // Stored layer L: exactly ONE symbol per ω^ layer (symbolName(L));
+            // stacking symbols ("@!…") is invalid (issue #19).  The body is
+            // the diagonal letter A(a×m)10 at the smooth mantissa.  (Layers
+            // past the symbol list already returned through the ε branch.)
+            return symbolName(num.layer) + regularFormat(mant, precision4) +
+                   "A" + "a".repeat(mInt) + "10"
         }
-        // Stored layer L: exactly ONE symbol per ω^ layer (symbolName(L));
-        // stacking symbols ("@!…") is invalid (issue #19).  The body is the
-        // diagonal letter A(a×m)10 at the smooth mantissa.  (Layers past the
-        // symbol list already returned through the ε branch above.)
-        return symbolName(num.layer) + regularFormat(mant, precision4) +
-               "A" + "a".repeat(mInt) + "10"
+        // Hard-cap fallback: keep the argument (10 for a compact diagonal) but
+        // the level is the historical single-letter carry approximation.
+        let total = num.layer + 1
+        let body = regularFormat(1, precision4) + letterName(mInt) +
+                   formatR0Arg(10, precision4)
+        if (total <= SYMBOLS.length) return SYMBOLS[total - 1] + body
+        return body + "ε" + commaFormat(total)
     }
 
     // For !, @, #, $, %, &, ~, <, >, ? symbols: prefix the symbol.  When the
@@ -1688,23 +1693,21 @@ function formatOrdinal(num, precision, precision4) {
                 // "2.000Aaaa3" — not the historical anchor-A "2.000Aaaa10".
                 let diagMant = 2 * Math.pow(5, base - Math.floor(base))
                 let diagBeta = top
-                // multiLetterLimit symbol carry: A + aaZeroCount a's is
-                // aaZeroCount+1 letters — past the limit the diagonal reads as
-                // one more symbol with the SINGLE letter of the finite level
-                // aaZeroCount (10{ω^10}10 → !1.000N10)
-                if (aaZeroCount + 1 > Math.max(2, FORMAT_OPTIONS.multiLetterLimit | 0)) {
-                    return "!" + regularFormat(1, precision4) +
-                           letterName(aaZeroCount) + formatR0Arg(10, precision4)
-                }
-                // #26: a NON-integer single diagonal marker round-trips exactly
-                // as the letter token itself (Aaa1.5), not as the 4-digit
-                // αAaaβ spelling (4.472Aaa1 → x=1.4999811).  The token form
-                // is also the README spelling for fragmented diagonal args.
-                if (base !== top && totalAaCount === 1 && aaZeroCount >= 2) {
+                // #26/#28: a single multi-a diagonal marker round-trips exactly
+                // as the letter token itself (Aaa1.5, Aaaaa3.5, Aaaaa10).  The
+                // αAaaβ spelling is only used for integer arguments that stay
+                // inside multiLetterLimit (α=2); past the limit the old
+                // single-letter carry hard-coded 10 and did not round-trip.
+                let multiLimit = Math.max(2, FORMAT_OPTIONS.multiLetterLimit | 0)
+                if (aaZeroCount >= 2 && (base !== top || aaZeroCount + 1 > multiLimit)) {
                     let argStr = String(base)
                     if (/e-/i.test(argStr)) argStr = base.toFixed(20)
                     argStr = argStr.replace(/e\+?/i, "E")
-                    return letter + argStr
+                    if (aaZeroCount <= MULTI_TOKEN_CAP) return letter + argStr
+                    // Hard-cap fallback: preserve the argument but accept the
+                    // historical single-letter level approximation.
+                    return "!" + regularFormat(1, precision4) +
+                           letterName(aaZeroCount) + argStr
                 }
                 return regularFormat(diagMant, precision4) + letter + commaFormat(diagBeta)
             }
