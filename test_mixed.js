@@ -2023,8 +2023,12 @@ checkFormat("20-row cascade compresses to two letter types", MetaNum.h10000(3, 1
 // SINGLE-letter form !αΓβ — "!" adds one ω^ layer on top of the level Γ names
 checkFormat("10-letter level carries to !1.000M9", MetaNum.iter(3, 10), "!1.000M9");
 checkFormat("5-letter level carries to !1.000H4", m3.iter(5), "!1.000H4");
-checkFormat("symbol carry stacks: apix(3,10) → @1.000N10", m3.aperixxate(10), "@1.000N10");
-checkFormat("symbol carry stacks: apix(3,5) → @1.000I10", m3.aperixxate(5), "@1.000I10");
+// #28: past multiLetterLimit the pure diagonal keeps the exact token instead
+// of the old single-letter carry (which did not round-trip).
+checkFormat("apix(3,10) → exact !2.000A(a×10)10", m3.aperixxate(10), "!2.000A" + "a".repeat(10) + "10");
+ok("apix(3,10) format round-trip", MetaNum(format(m3.aperixxate(10))).eq(m3.aperixxate(10)));
+checkFormat("apix(3,5) → exact !A(a×5)10", m3.aperixxate(5), "!A" + "a".repeat(5) + "10");
+ok("apix(3,5) format round-trip", MetaNum(format(m3.aperixxate(5))).eq(m3.aperixxate(5)));
 checkFormat("short diagonal keeps the letter form", m3.aperixxate(3), "!2.000Aaaa10");
 checkFormat("cascade inner α stays [1,10) (AbAa600)", "AbAa600", "Ab1.000Aa600");
 
@@ -2148,6 +2152,14 @@ console.log("\n=== symbol layer semantics ===");
   ok("format round-trip @Aa1.5 (!Aaa1.5)", fmtRT("@Aa1.5"), format(MetaNum("@Aa1.5")));
   ok("format round-trip @Aa2.5 (!Aaaa2.5)", fmtRT("@Aa2.5"), format(MetaNum("@Aa2.5")));
   ok("format round-trip #Aa2.5 (@Aaaa2.5)", fmtRT("#Aa2.5"), format(MetaNum("#Aa2.5")));
+
+  // issue #28: past multiLetterLimit the pure diagonal keeps the exact token
+  // (the old carry !1.000H10 hard-coded 10 and added a layer).
+  ok("format round-trip Aaaaa3.5", fmtRT("Aaaaa3.5"), format(MetaNum("Aaaaa3.5")));
+  ok("format round-trip Aaaaa5", fmtRT("Aaaaa5"), format(MetaNum("Aaaaa5")));
+  ok("format round-trip Aaaaa10", fmtRT("Aaaaa10"), format(MetaNum("Aaaaa10")));
+  ok("format round-trip @Aa3.5", fmtRT("@Aa3.5"), format(MetaNum("@Aa3.5")));
+  ok("format round-trip #Aa3.5", fmtRT("#Aa3.5"), format(MetaNum("#Aa3.5")));
 })();
 
 console.log("\n=== two-letter rule ===");
