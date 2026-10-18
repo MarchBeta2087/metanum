@@ -667,6 +667,10 @@ MetaNum(10).h100(20);  //10{ω^2}20=10{ω*20}10=10{ω*19+9}^8 10{ω*19+8}^8 ... 
 
 # dlsdl's Letter Notation
 
+> Formal semantics and the design decisions behind the notation are recorded in
+> [docs/notation-semantics.md](docs/notation-semantics.md); the executable
+> regression suite is [test_mixed.js](test_mixed.js).
+
 Modified from PsiCubed's letter notation(<https://googology.fandom.com/wiki/User_blog:PsiCubed2/My_Letter_Notation>)
 
 The idea here is to extend the PsiCubed's letter notation to much larger numbers reach level ε0 of FGH or HH. The properties we wish to preserve here are:
