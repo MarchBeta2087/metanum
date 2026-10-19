@@ -1,5 +1,6 @@
-// format-metanum.js by dlsdl
-// Adapted from format-omeganum.js by cloudytheconqueror
+// Author: dlsdl v2.1.1
+// v2.1.1 Fix(format): exact token form for non-integer multi-a layers and past multiLetterLimit
+// Code snippets and templates from format-omeganum.js
 // Uses dlsdl's Letter Notation (see README.md)
 
 // Set to 1 to print debug information to console
