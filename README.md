@@ -1,6 +1,7 @@
 # MetaNum
 
 [![NPM](https://img.shields.io/npm/v/metanum.svg)](https://www.npmjs.com/package/metanum)
+[![tests](https://github.com/dlsdl/metanum/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/dlsdl/metanum/actions/workflows/test.yml)
 
 - MetaNum v2.1.1 by dlsdl
 
@@ -23,6 +24,10 @@ In Fast Growing Hierarchy, a metanum number is nearly `f_ω^ω^…(layer-1 ω^'s
 ```bash
 npm install metanum
 ```
+
+## Development
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Run `npm test` (Node 22); the regression suite is `test_mixed.js`. The API and notation are documented in the [README](README.md) and [`docs/notation-semantics.md`](docs/notation-semantics.md).
 
 ## Creating Instances
 
