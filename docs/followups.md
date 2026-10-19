@@ -5,7 +5,7 @@
 | 来源 | Phase 1/2 + A1 + B2-a 收尾时登记的残余（D01–D07 主体已修复） |
 | 基线 | fork `fix/issue-17-phase1` @ `8643ee6` |
 | 关联 | [`issue-17-defects.md`](issue-17-defects.md)、[`notation-semantics.md`](notation-semantics.md)、[`d07-engine-design.md`](d07-engine-design.md) |
-| 状态 | 已关闭 #19–#24（上游 #25）、#26（上游 #27）；#28 已修（本 PR） |
+| 状态 | 已关闭 #19–#24（上游 #25）、#26（上游 #27）、#28（上游 #29） |
 
 ## 关闭判定（v2.1.0，2026-10-18）
 
@@ -18,7 +18,7 @@
 | #23 | README 四处矛盾已改，并已链接 `docs/notation-semantics.md` | **已关闭** |
 | #24 | 特性未实现，形式语义未并入规范；#17 已明确“很可能永不实现” | **已关闭（not planned）** |
 | #26 | 已修：`@Aa1.5`/`@Aa2.5`/`#Aa2.5` 输出 `!Aaa1.5`/`!Aaaa2.5`/`@Aaaa2.5` 并精确往返；超限部分转 #28 | **已关闭** |
-| #28 | 已修：`Aaaaa3.5`/`Aaaaa5`/`Aaaaa10`/`@Aa3.5`/`#Aa3.5` 输出精确 token 形并严格往返；token 深度 >64 时退回进位近似 | **可关闭**（本 PR） |
+| #28 | 已修：`Aaaaa3.5`/`Aaaaa5`/`Aaaaa10`/`@Aa3.5`/`#Aa3.5` 输出精确 token 形并严格往返；token 深度 >64 时退回进位近似 | **已关闭** |
 
 复现（本 PR 后）：`node test_mixed.js` **1149/0**；
 `node docs/repro/issue-17.js` 中 D01–D04/D07 全部通过。
