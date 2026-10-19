@@ -568,7 +568,7 @@ new MetaNum(100).valueOf();                // "100"
 new MetaNum(100).toFixed(2);               // "100.00"
 new MetaNum(100).toExponential(2);         // "1.00e+2"
 new MetaNum(100).toPrecision(3);           // "100"
-new MetaNum(100).toHyperE();               // "100"
+new MetaNum(100).toHyperE();               // "E2" (10^2 = 100)
 new MetaNum(100).toStringWithDecimalPlaces(4); // "100.0000"
 new MetaNum(100).toJSON();                 // {sign:1, array:[[100]], layer:0}
 new MetaNum(100).format();                 // letter notation (format-metanum.js), e.g. MetaNum.hardy(4166).format() → "2.397G5", optional args: format(precision, small)
