@@ -2752,4 +2752,41 @@ console.log("\n=== hardy base extension ===");
   })());
 })();
 
+// ─────────────────────────────────────────────────────────────
+// issue #32: Hardy past the clean-tower ceiling and Hyper-E output
+// ─────────────────────────────────────────────────────────────
+console.log("\n=== issue #32 regressions ===");
+(function () {
+  // A layer-0 value with ordinal rows (Aa21, Aa100, Aaa16, !Aa16) is past the
+  // clean 10^^k range: its Hardy value is beyond f_epsilon0, so Infinity.
+  ok("hardy(Aa21) = Infinity", MetaNum.hardy("Aa21").isInfinite());
+  ok("hardy(Aa100) = Infinity", MetaNum.hardy("Aa100").isInfinite());
+  ok("hardy(Aa928) = Infinity", MetaNum.hardy("Aa928").isInfinite());
+  ok("hardy(Aaa16) = Infinity", MetaNum.hardy("Aaa16").isInfinite());
+  ok("hardy(!Aa16) = Infinity", MetaNum.hardy("!Aa16").isInfinite());
+  ok("hardy(Aa2) stays finite", !MetaNum.hardy("Aa2").isInfinite());
+
+  // toHyperE: E-prefix for short towers, E1#n for integer tetration,
+  // Ea#k for longer towers.
+  eq("toHyperE(E15) = E15", MetaNum("E15").toHyperE(), "E15");
+  eq("toHyperE(E16) = E16", MetaNum("E16").toHyperE(), "E16");
+  eq("toHyperE(EE16) = EE16", MetaNum("EE16").toHyperE(), "EE16");
+  eq("toHyperE(F16) = E1#16", MetaNum("F16").toHyperE(), "E1#16");
+  eq("toHyperE(10^^1000) = E1#1000", MetaNum(10).tetr(1000).toHyperE(), "E1#1000");
+  eq("toHyperE(E100#2) = EE100", MetaNum("E100#2").toHyperE(), "EE100");
+
+  // Ea#b parsing (also fixes the README E100#2 example).
+  ok("fromString(E100#2) = 10^10^100", MetaNum("E100#2").eq(MetaNum("EE100")));
+  ok("fromString(E1#16) = 10^^16", MetaNum("E1#16").eq(MetaNum(10).tetr(16)));
+  ok("fromHyperE(E100#2) = 10^10^100", MetaNum.fromHyperE("E100#2").eq(MetaNum("EE100")));
+  ok("fromHyperE(E1#16) = 10^^16", MetaNum.fromHyperE("E1#16").eq(MetaNum(10).tetr(16)));
+
+  // outputs parse back
+  ok("toHyperE round-trip: F16", MetaNum(MetaNum("F16").toHyperE()).eq(MetaNum("F16")));
+  ok("toHyperE round-trip: E16#14", (function () {
+    var x = MetaNum.fromArray([[16, 14]]);
+    return MetaNum(x.toHyperE()).eq(x);
+  })());
+})();
+
 console.log("\n=== hardy/FGH tests Done ===");
