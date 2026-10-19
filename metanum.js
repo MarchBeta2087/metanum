@@ -1,5 +1,5 @@
-//Author: dlsdl v2.1
-//v2.1
+//Author: dlsdl v2.1.1
+//v2.1.1 Fix: round-trip @Aa1/#Aa1 and alpha-Gamma sub-unit forms; fix(format): exact token form for non-integer multi-a layers and past multiLetterLimit
 //Code snippets and templates from OmegaNum.js
 
 ;(function (globalScope) {
