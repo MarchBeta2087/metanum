@@ -1,9 +1,9 @@
 # MetaNum
 
 [![NPM](https://img.shields.io/npm/v/metanum.svg)](https://www.npmjs.com/package/metanum)
-[![tests](https://github.com/MarchBeta2087/metanum/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/MarchBeta2087/metanum/actions/workflows/test.yml)
+[![tests](https://github.com/dlsdl/metanum/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/dlsdl/metanum/actions/workflows/test.yml)
 
-- MetaNum v2.1.0 by dlsdl
+- MetaNum v2.1.1 by dlsdl
 
 A huge number library holding up to X↑↑X&9e15.
 
@@ -27,7 +27,7 @@ npm install metanum
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Run `npm test` (Node 22); the regression suite is `test_mixed.js`.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Run `npm test` (Node 22); the regression suite is `test_mixed.js`. The API and notation are documented in the [README](README.md) and [`docs/notation-semantics.md`](docs/notation-semantics.md).
 
 ## Creating Instances
 
@@ -1030,18 +1030,18 @@ Every hyperoperation is stored EXACTLY while it fits the array budget and approx
 
 # Changelog
 
-
-- 2026-10-16 v2.1.0: hardy(x, base) — the second argument is the base (default 10, integer in [2,1000]); the ordinal is read off the digits of x in that base, so hardy(10,8) = H_{ω+2}(8) = 20 and hardy(10,4) = H_{ω·2+2}(4) = 24. New FGH(x, y) = hardy(y^x, y). The base-10 path is unchanged; for other bases the plain finite inputs take the base digit path (structured / power-tower inputs are rejected). test.js merged into test_mixed.js (1143 vectors), and the comments in metanum.js / format-metanum.js were tightened. Fix issue #15 (hardy ordinal rows carried a negative coefficient from the decimal point of non-integer exponents and ran one column per character — hardy("ee9.05") now reads the integer digits only, flows the fraction into the from-below base, and is monotone again); issue #17 (hardy with a non-integer mantissa at or beyond Number.MAX_VALUE collapsed to Infinity — the rest now recurses on the exact digit string, hardy("1.5e309") is finite); issue #19 (Aa3 = 2Aa3 = 10{3}10 → [[10^10,8,8]]; an integer !Aa<n> is the full 10{ω^n}10 cascade at layer 0 with @Aa<n>/#Aa<n> at layers 1/2 on the same array — past the row budget (n ≥ maxCols) the layer goes one up with the de-!-ed compact [[n],[1,0,1]] so nothing truncates; format emits exactly ONE symbol per value and the displays round-trip; toString splits "^count" tokens so multi-row cascades parse back; the "EEαEβ" display with a beyond-double exponent no longer loses its letter chain on parse, and comma-grouped displays parse back); issue #20 (the diagonal letters follow the README — Aaα = 10{α}10, so Aa1.5 = [[924.19,3]] between Aa1 and Aa2, and format is the approximate α'Aaβ' form carried to its single-letter display "EE1.537E924"/"FFFE1.745E9", round-tripped with tolerance); issue #21 (toBeaf keeps negatives as "-{5}" and sub-units as "{10,320}⁻¹", both parsed back by fromBeaf); README errata for the four !Aa/!αAaβ formulas (notation-semantics §6); issue #22 re-evaluated and left as the marker approximation — the layer-1 row format cannot express the finite-part variation of a rule-2 chain (see docs/d07-engine-design.md §7).
-- 2026-9-30 v2.0.2: Fix a lot of bugs e.g. hardy(non integer > 1000) throwing, hardy beyond the 1.8e308 range fails, format of "ω^n\*large numbers" fails, some FORMAT_OPTIONS not take effect. 
-- 2026-9-25 v2.0.1: Fix arrow(x,y,y) not being monotone in y and array except array[0][0] may be non-integer
-- 2026-9-15 v2.0: Add hyper-root & hyper-log, hardy function, fractional hyperoperation inputs, fix BEAF operation level and format
-- 2026-8-18 v1.4 Support hyper operation >MSI and fix format-metanum bugs
-- 2026-7-31 v1.3 Add format-metanum.js, fix basic operations, hyper operations and BEAF bugs
-- 2026-7-9 v1.2 Add more hyper operations up to ε₀, add BEAF operation and fix bugs
-- 2026-6-3 v1.1 Add support for very small numbers ,add more hyper operations and fix bugs
-- 2026-5-23 v1.0 Rewritten and add even more hyper operations
-- 2026-2-24 v0.4 Add hyper operations and extend fromString
-- 2026-2-11 v0.3 Reconstruct code and correct calculating functions
-- 2026-2-6 v0.2 New Metanum data structure with Cantor normal form
-- 2026-2-1 v0.1 First commit
+- 2026-10-18 v2.1.1 Fix: round-trip @Aa1/#Aa1 and alpha-Gamma sub-unit forms; fix(format): exact token form for non-integer multi-a layers and past multiLetterLimit
+- 2026-10-16 v2.1.0 Add hardy(x, base) and FGH(x, base), fix issue #15, #17, #19, #20, #21, #22
+- 2026-9-30 v2.0.2 Fix a lot of bugs e.g. hardy(non integer > 1000) throwing, hardy beyond the 1.8e308 range fails, format of "ω^n\*large numbers" fails, some FORMAT_OPTIONS not take effect. 
+- 2026-9-25 v2.0.1 Fix arrow(x,y,y) not being monotone in y and array except array[0][0] may be non-integer
+- 2026-9-15 v2.0.0 Add hyper-root & hyper-log, hardy function, fractional hyperoperation inputs, fix BEAF operation level and format
+- 2026-8-18 v1.4.0 Support hyper operation >MSI and fix format-metanum bugs
+- 2026-7-31 v1.3.0 Add format-metanum.js, fix basic operations, hyper operations and BEAF bugs
+- 2026-7-9 v1.2.0 Add more hyper operations up to ε₀, add BEAF operation and fix bugs
+- 2026-6-3 v1.1.0 Add support for very small numbers ,add more hyper operations and fix bugs
+- 2026-5-23 v1.0.0 Rewritten and add even more hyper operations
+- 2026-2-24 v0.4.0 Add hyper operations and extend fromString
+- 2026-2-11 v0.3.0 Reconstruct code and correct calculating functions
+- 2026-2-6 v0.2.0 New Metanum data structure with Cantor normal form
+- 2026-2-1 v0.1.0 First commit
 
