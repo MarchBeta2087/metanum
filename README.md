@@ -1,7 +1,6 @@
 # MetaNum
 
 [![NPM](https://img.shields.io/npm/v/metanum.svg)](https://www.npmjs.com/package/metanum)
-[![tests](https://github.com/dlsdl/metanum/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/dlsdl/metanum/actions/workflows/test.yml)
 
 - MetaNum v2.1.2 by dlsdl
 
@@ -24,10 +23,6 @@ In Fast Growing Hierarchy, a metanum number is nearly `f_ω^ω^…(layer-1 ω^'s
 ```bash
 npm install metanum
 ```
-
-## Development
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). Run `npm test` (Node 22); the regression suite is `test_mixed.js`. The API and notation are documented in the [README](README.md) and [`docs/notation-semantics.md`](docs/notation-semantics.md).
 
 ## Creating Instances
 
@@ -568,7 +563,7 @@ new MetaNum(100).valueOf();                // "100"
 new MetaNum(100).toFixed(2);               // "100.00"
 new MetaNum(100).toExponential(2);         // "1.00e+2"
 new MetaNum(100).toPrecision(3);           // "100"
-new MetaNum(100).toHyperE();               // "E2" (10^2 = 100)
+new MetaNum(100).toHyperE();               // "100"
 new MetaNum(100).toStringWithDecimalPlaces(4); // "100.0000"
 new MetaNum(100).toJSON();                 // {sign:1, array:[[100]], layer:0}
 new MetaNum(100).format();                 // letter notation (format-metanum.js), e.g. MetaNum.hardy(4166).format() → "2.397G5", optional args: format(precision, small)
